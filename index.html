@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PinPoint — Live Tracking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,500;9..144,1,300&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+
+<script>
+/* ╔══════════════════════════════════════════════════════╗
+   ║  PINPOINT CONFIG                                     ║
+   ║                                                      ║
+   ║  DEMO_MODE = true  → works in two browser tabs now  ║
+   ║  No Firebase setup needed for demo.                  ║
+   ║                                                      ║
+   ║  For real cross-device use:                          ║
+   ║  1. Go to console.firebase.google.com                ║
+   ║  2. New project → Realtime Database → Test mode      ║
+   ║  3. Paste your config below                          ║
+   ║  4. Set DEMO_MODE = false                            ║
+   ╚══════════════════════════════════════════════════════╝ */
+const DEMO_MODE = false;
+const FB = {
+  databaseURL: "https://pinpoint-4561d-default-rtdb.europe-west1.firebasedatabase.app"
+};
+</script>
+
+<style>
+:root{
+  --bg:#FDFAF4;--s:#FFF;--s2:#F5F0E8;--s3:#EDE8DE;
+  --b:#E8E2D6;--b2:#D4CEC4;
+  --ink:#1A1714;--ink2:#6B6558;--ink3:#A89F94;
+  --or:#E8610A;--or-l:#FDF0E8;--or-b:rgba(232,97,10,.14);
+  --gr:#16A34A;--gr-l:#F0FDF4;--gr-b:rgba(22,163,74,.12);
+  --sans:'Plus Jakarta Sans',sans-serif;
+  --serif:'Fraunces',Georgia,serif;
+}
+.dark{
+  --bg:#0A0C10;--s:#13161C;--s2:#1C2028;--s3:#242830;
+  --b:rgba(255,255,255,.07);--b2:rgba(255,255,255,.13);
+  --ink:#F0EFE8;--ink2:#8A8C96;--ink3:#52555E;
+  --or:#38BDF8;--or-l:#082030;--or-b:rgba(56,189,248,.1);
+  --gr:#22C55E;--gr-l:#0A1F10;--gr-b:rgba(34,197,94,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;width:100%;overflow:hidden;font-family:var(--sans);background:var(--bg);color:var(--ink);transition:background .3s,color .3s}
+
+/* SCREENS */
+.scr{position:fixed;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .38s cubic-bezier(.4,0,.2,1),transform .38s cubic-bezier(.4,0,.2,1);transform:translateY(14px)}
+.scr.on{opacity:1;pointer-events:all;transform:none}
+.scr.out{opacity:0;transform:translateY(-14px);pointer-events:none}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+
+/* SHARED */
+.h1{font-family:var(--serif);font-size:clamp(1.9rem,7vw,2.6rem);font-weight:300;line-height:1.15}
+.h2{font-family:var(--serif);font-size:1.5rem;font-weight:300;line-height:1.2}
+.tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;border:none;border-radius:14px;cursor:pointer;font-family:var(--sans);font-size:15px;font-weight:600;background:var(--or);color:#fff;transition:transform .12s,opacity .12s}
+.btn:active{transform:scale(.97);opacity:.88}
+.btn:disabled{opacity:.38;pointer-events:none}
+.btn.lg{padding:18px;border-radius:16px;font-size:16px}
+.btn.ghost{background:transparent;color:var(--ink2);border:1px solid var(--b)}
+.btn.green{background:var(--gr)}
+.btn.wa{background:#25D366}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:100px;font-size:12px;font-weight:500}
+.pill.or{background:var(--or-l);color:var(--or);border:1px solid rgba(232,97,10,.2)}
+.pill.gr{background:var(--gr-l);color:var(--gr);border:1px solid rgba(22,163,74,.2)}
+.blink{width:7px;height:7px;border-radius:50%;animation:blink 2s ease-in-out infinite;display:inline-block}
+.blink.or{background:var(--or)}.blink.gr{background:var(--gr)}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.dots{display:flex;gap:5px;margin-bottom:14px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--b2);transition:all .3s}
+.dot.done{background:var(--or)}.dot.now{background:var(--or);width:20px;border-radius:3px}
+.dot.done-gr{background:var(--gr)}
+.field{position:relative;margin-bottom:.75rem}
+.fic{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none}
+.fic.t{top:14px;transform:none}
+.inp{width:100%;background:var(--s2);border:1.5px solid var(--b);border-radius:13px;padding:13px 14px 13px 44px;font-family:var(--sans);font-size:15px;color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s;caret-color:var(--or)}
+.inp:focus{border-color:var(--or);box-shadow:0 0 0 3px var(--or-b)}
+.inp::placeholder{color:var(--ink3)}
+textarea.inp{resize:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:1.2rem}
+.chip{font-size:12px;padding:6px 12px;border-radius:100px;background:var(--s2);border:1px solid var(--b);color:var(--ink2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.chip:active{background:var(--or-l);border-color:rgba(232,97,10,.3);color:var(--or)}
+.skip{text-align:center;padding:10px;font-size:12px;color:var(--ink3);cursor:pointer}
+.shimmer{border-radius:5px;height:16px;width:72%;background:linear-gradient(90deg,var(--s2) 25%,var(--s) 50%,var(--s2) 75%);background-size:200% 100%;animation:shim 1.4s infinite}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.handle{width:34px;height:34px;border-radius:50%;background:var(--b);margin:0 auto 1rem;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,background .2s}
+.handle:hover{background:var(--b2)}
+.handle:active{transform:scale(.95)}
+.handle .arrow-icon{width:10px;height:10px;border-right:2px solid var(--ink2);border-bottom:2px solid var(--ink2);transform:rotate(45deg);transition:transform .2s}
+#s1 .sheet-base.collapsed .arrow-icon{transform:rotate(-135deg)}
+    .sheet-base{position:absolute;bottom:0;left:0;right:0;background:var(--s);border-radius:22px 22px 0 0;border-top:1px solid var(--b);padding:1.25rem 1.5rem 2.75rem;box-shadow:0 -6px 28px rgba(0,0,0,.07);z-index:9999;transition:transform .24s ease;transform:translateY(0)}
+    #s1 .sheet-base.collapsed{transform:translateY(calc(100% - 72px))}
+    #s1 .sheet-base.expanded{transform:translateY(0)}
+    .lsheet{z-index:10020}
+
+/* PHOTO */
+.pzone{border:1.5px dashed var(--b2);border-radius:14px;padding:1rem;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;margin-bottom:1rem;position:relative;overflow:hidden}
+.pzone input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.pph{width:52px;height:52px;border-radius:10px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.pprv{width:52px;height:52px;border-radius:10px;object-fit:cover;display:none;flex-shrink:0}
+.pzone.got{border-style:solid;border-color:var(--gr);background:var(--gr-l)}
+.pzone.got .pph{display:none}.pzone.got .pprv{display:block}
+
+/* S0 */
+#s0{background:var(--bg);justify-content:space-between}
+.s0-body{padding:3rem 1.75rem 0;flex:1;display:flex;flex-direction:column;justify-content:center}
+.s0-foot{padding:1.25rem 1.75rem 3rem}
+.wm{display:flex;align-items:center;gap:9px;margin-bottom:2.5rem;animation:up .5s .1s both}
+.wm-box{width:32px;height:32px;background:var(--or);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.wm-pin{width:11px;height:11px;background:#fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg)}
+.feats{display:flex;flex-direction:column;gap:8px;margin:1.5rem 0}
+.feat{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink2)}
+.fic-sm{width:30px;height:30px;border-radius:9px;background:var(--s2);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+
+/* MAP */
+#s1{overflow:hidden}
+#lmap{position:absolute;inset:0;z-index:1}
+.vig{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 28%,rgba(253,250,244,.4) 100%)}
+.map-bar{position:absolute;top:0;left:0;right:0;z-index:25;padding:2.75rem 1.25rem .75rem;background:linear-gradient(to bottom,rgba(253,250,244,.96) 0%,transparent 100%);pointer-events:none}
+.xhair{position:absolute;top:50%;left:50%;z-index:20;pointer-events:none;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+.xhair.up{transform:translate(-50%,-116%) scale(1.1)}
+.xh-body{width:46px;height:46px;background:var(--or);border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(232,97,10,.4)}
+.xh-i{width:16px;height:16px;background:#fff;border-radius:50%;transform:rotate(45deg)}
+.xh-sh{width:14px;height:5px;margin-top:3px;border-radius:50%;background:rgba(0,0,0,.18);transition:all .18s}
+.xhair.up .xh-sh{width:8px;opacity:.12;transform:translateY(6px)}
+.ripw{position:absolute;top:50%;left:50%;z-index:10;pointer-events:none}
+.rip{position:absolute;border:1.5px solid var(--or);border-radius:50%;opacity:0;transform:translate(-50%,-50%)}
+.rip.go{animation:ripout .7s cubic-bezier(0,0,.2,1) forwards}
+.rip:nth-child(2){animation-delay:.13s}.rip:nth-child(3){animation-delay:.26s}
+@keyframes ripout{0%{width:8px;height:8px;opacity:.9}100%{width:90px;height:90px;opacity:0}}
+#gload{position:absolute;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s}
+#gload.gone{opacity:0;pointer-events:none}
+#gload.hidden{display:none}
+.toast{position:fixed;top:1rem;left:50%;transform:translateX(-50%);z-index:10050;background:rgba(26,23,20,.96);color:#fff;padding:9px 14px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.25);font-size:13px;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--gr);}
+.toast.info{background:#1D4ED8;}
+.toast.warn{background:var(--or);}
+.spin{width:44px;height:44px;border-radius:50%;border:2px solid var(--b);border-top-color:var(--or);animation:spin 1s linear infinite}.btn .spin{width:18px;height:18px;border-width:2px;margin-right:8px;vertical-align:middle}@keyframes spin{to{transform:rotate(360deg)}}
+#gerr{position:absolute;inset:0;z-index:40;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:2rem;text-align:center}
+
+/* S2 S3 */
+#s2,#s3{background:var(--bg);justify-content:flex-end}
+.lmbg{position:absolute;inset:0}
+#mmap{width:100%;height:100%;filter:brightness(.87) saturate(.6)}
+
+/* S4 SHARE */
+#s4{background:var(--bg);overflow-y:auto;padding:3rem 1.5rem 3rem}
+.cf{position:fixed;top:0;left:0;right:0;pointer-events:none;z-index:999;height:100vh;overflow:hidden}
+.cfp{position:absolute;top:-10px;animation:cff 2.2s ease-in forwards}
+@keyframes cff{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(100vh) rotate(540deg)}}
+.dcard{background:var(--s);border:1px solid var(--b);border-radius:16px;overflow:hidden;margin-bottom:1.25rem}
+.dr{display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid var(--b)}
+.dr:last-child{border-bottom:none}
+.lnkbox{display:flex;align-items:center;gap:8px;background:var(--s);border:1px solid var(--b);border-radius:12px;padding:.75rem 1rem;margin-bottom:.75rem}
+.ltxt{font-size:11px;color:var(--ink2);font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cpb{flex-shrink:0;padding:5px 12px;border-radius:7px;border:1px solid var(--b);background:var(--s2);font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;font-family:var(--sans)}
+.cpb.ok{background:var(--gr-l);color:var(--gr);border-color:rgba(22,163,74,.25)}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.75rem}
+.sbtn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:13px;border:none;cursor:pointer;font-family:var(--sans);font-size:14px;font-weight:600;transition:transform .12s}
+.sbtn:active{transform:scale(.97)}
+.sb-wa{background:#25D366;color:#fff}
+.sb-sh{background:var(--s2);color:var(--ink);border:1px solid var(--b)}
+
+/* LIVE MAP SCREENS */
+#s-track,#s-drv{flex-direction:column;overflow:hidden}
+#s-track{background:var(--bg)}
+#s-drv{background:var(--bg)}
+.livewrap{position:relative;flex:1;min-height:0;overflow:hidden}
+#tmap,#dmap{width:100%;height:100%}
+
+/* ETA TOPBAR */
+.etabar{position:absolute;top:0;left:0;right:0;z-index:10020;padding:2.5rem 1.25rem .85rem;pointer-events:none}
+#s-track .etabar{background:linear-gradient(to bottom,rgba(253,250,244,.97) 0%,transparent 100%)}
+#s-drv .etabar{background:linear-gradient(to bottom,rgba(10,12,16,.97) 0%,transparent 100%)}
+.eta-main{display:flex;align-items:baseline;gap:8px;margin-bottom:3px}
+.eta-n{font-family:var(--serif);font-size:2.4rem;font-weight:300;line-height:1;color:var(--ink)}
+.eta-u{font-size:14px;font-weight:500;color:var(--ink2)}
+.eta-s{font-size:13px;color:var(--ink2)}
+
+/* route loading */
+.rload{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10020;display:none;background:rgba(253,250,244,.92);border-radius:50px;padding:8px 18px;font-size:13px;font-weight:500;color:var(--ink2);gap:8px;align-items:center}
+.dark .rload{background:rgba(10,12,16,.92)}
+.rload.on{display:flex}
+.rspin{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--b);border-top-color:var(--or);animation:spin 1s linear infinite}
+
+/* LIVE SHEET */
+.lsheet{background:var(--s);border-top:1px solid var(--b);flex-shrink:0;padding:1.1rem 1.5rem 1.5rem;overflow-y:auto;max-height:46vh}
+.lhdr{display:flex;align-items:center;gap:10px;padding-bottom:.9rem;margin-bottom:.2rem;border-bottom:1px solid var(--b)}
+.lrow{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--b);align-items:flex-start}
+.lrow:last-child{border-bottom:none}
+.lic{font-size:15px;width:20px;flex-shrink:0;margin-top:2px}
+.lval{font-size:14px;color:var(--ink);line-height:1.4}
+.lval.sm{font-size:12px;font-family:monospace;color:var(--ink2)}
+
+/* NAV FABS */
+.fabs{position:absolute;bottom:1rem;right:1rem;display:flex;flex-direction:column;gap:8px;z-index:10020}
+.fab{display:flex;align-items:center;gap:6px;padding:10px 16px;border-radius:100px;border:none;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:600;box-shadow:0 3px 12px rgba(0,0,0,.25);white-space:nowrap;transition:transform .12s}
+.fab:active{transform:scale(.96)}
+.fab-gm{background:#4285F4;color:#fff}
+.fab-wz{background:#05C7EF;color:#000}
+.rctr{position:absolute;bottom:1rem;left:1rem;z-index:10020;width:42px;height:42px;border-radius:50%;background:var(--s);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:18px;transition:transform .12s}
+.rctr:active{transform:scale(.94)}
+
+/* ARRIVED */
+#s-arrived{background:var(--bg);align-items:center;justify-content:center;padding:2.5rem;text-align:center}
+.acirc{width:96px;height:96px;border-radius:50%;background:var(--gr-l);border:2px solid rgba(22,163,74,.3);display:flex;align-items:center;justify-content:center;font-size:44px;margin-bottom:1.5rem;animation:pop .5s .2s both}
+
+/* MAP MARKERS */
+.cpin{width:30px;height:30px;background:#E8610A;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid #fff;box-shadow:0 4px 14px rgba(232,97,10,.55)}
+.dpin{width:40px;height:40px;background:#E8610A;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 6px 20px rgba(232,97,10,.6);animation:dpulse 2s ease-in-out infinite}
+@keyframes dpulse{0%,100%{box-shadow:0 6px 20px rgba(232,97,10,.55)}50%{box-shadow:0 6px 32px rgba(232,97,10,.95)}}
+.mypos{width:18px;height:18px;border-radius:50%;background:#E8610A;border:3px solid #fff;box-shadow:0 0 0 5px rgba(232,97,10,.18),0 2px 8px rgba(232,97,10,.4);animation:mypulse 2.5s ease-in-out infinite}
+@keyframes mypulse{0%,100%{box-shadow:0 0 0 5px rgba(232,97,10,.18)}50%{box-shadow:0 0 0 12px rgba(232,97,10,.06)}}
+/* the animated car */
+.carbox{width:40px;height:56px;display:flex;align-items:center;justify-content:center;transition:transform .5s ease-out;will-change:transform}
+
+/* tile filters */
+.leaflet-control-zoom,.leaflet-control-attribution{display:none!important}
+.leaflet-container{background:#1a1a14}
+#lmap .leaflet-tile{filter:brightness(.92) saturate(.65)}
+#mmap .leaflet-tile{filter:brightness(.87) saturate(.55)}
+#tmap .leaflet-tile{filter:brightness(.9) saturate(.6)}
+#dmap .leaflet-tile{filter:brightness(.78) saturate(.45) hue-rotate(5deg)}
+</style>
+</head>
+<body>
+
+<!-- ─── S0: INTRO ─── -->
+<div id="s0" class="scr on">
+  <div class="s0-body">
+    <div class="wm">
+      <div class="wm-box"><div class="wm-pin"></div></div>
+      <span style="font-family:var(--serif);font-size:16px;font-weight:500">PinPoint</span>
+    </div>
+    <div style="margin-bottom:.85rem;animation:up .5s .2s both"><span class="pill or"><span class="blink or"></span>Live delivery tracking</span></div>
+    <h1 class="h1" style="animation:up .5s .35s both;margin-bottom:.9rem">Guide your driver <em style="font-style:italic;color:var(--or)">exactly</em> to your door.</h1>
+    <p style="font-size:14px;font-weight:300;color:var(--ink2);line-height:1.7;max-width:280px;animation:up .5s .5s both">Like Uber — drop a pin, your driver gets live routing and you watch them coming to you. No app.</p>
+    <div class="feats" style="animation:up .5s .6s both">
+      <div class="feat"><div class="fic-sm">📍</div><span>Real GPS pin, not a typed address</span></div>
+      <div class="feat"><div class="fic-sm">🛣️</div><span>Actual road routing — not a straight line</span></div>
+      <div class="feat"><div class="fic-sm">🚗</div><span>Animated car, both sides see it live</span></div>
+      <div class="feat"><div class="fic-sm">⏱️</div><span>ETA countdown updating as they drive</span></div>
+    </div>
+  </div>
+  <div class="s0-foot">
+    <div class="field" style="animation:up .5s .7s both">
+      <div class="fic">🧾</div>
+      <input class="inp" id="oin" type="text" placeholder="Order number (optional)">
+    </div>
+    <button class="btn lg" onclick="toMap()" style="animation:up .5s .8s both"><span style="font-size:18px">📍</span> Set my delivery location</button>
+    <p style="text-align:center;font-size:12px;color:var(--ink3);margin-top:.65rem;animation:up .5s .9s both">Free · No app · Works on any phone</p>
+  </div>
+</div>
+
+<!-- ─── S1: MAP ─── -->
+<div id="s1" class="scr">
+  <div id="gload"><div class="spin"></div><p style="font-size:14px;color:var(--ink2);text-align:center;max-width:200px;line-height:1.5" id="gmsg">Finding your GPS…</p></div>
+  <div id="gerr"><div style="font-size:36px">📡</div><h2 class="h2">Location denied</h2><p style="font-size:13px;color:var(--ink2);line-height:1.6;max-width:260px" id="emsg">Please allow location access.</p><button class="btn" style="max-width:260px;margin-top:.5rem" onclick="retryG()">Try again</button><button class="btn ghost" style="max-width:260px;margin-top:.5rem" onclick="manualF()">Set manually</button></div>
+  <div id="lmap"></div>
+  <div class="vig"></div>
+  <div class="xhair" id="xh"><div class="xh-body"><div class="xh-i"></div></div><div class="xh-sh"></div></div>
+  <div class="ripw"><div class="rip"></div><div class="rip"></div><div class="rip"></div></div>
+  <div class="map-bar">
+    <div class="dots"><div class="dot done"></div><div class="dot now"></div><div class="dot"></div><div class="dot"></div></div>
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--or);margin-bottom:3px">Step 1 of 3</div>
+    <div class="h2">Drag map until pin<br>is on your exact door</div>
+  </div>
+  <div class="sheet-base">
+    <button type="button" class="handle" id="sheetToggle" aria-label="Toggle sheet"><span class="arrow-icon"></span></button>
+    <div class="field" style="margin-bottom:.6rem">
+      <div class="fic">🔍</div>
+      <input class="inp" id="searchInput" type="text" placeholder="Search address or landmark" onkeydown="if(event.key==='Enter'){searchAddress();}">
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:0.9rem">
+      <button class="btn ghost" id="searchBtn" onclick="searchAddress()">Search</button>
+      <button class="btn ghost" id="locBtn" onclick="useCurrentLocation()">Use current location</button>
+    </div>
+    <div id="searchMsg" style="font-size:12px;color:var(--ink3);margin-bottom:1rem;display:none"></div>
+    <div id="searchHistory" class="chips" style="margin-bottom:1rem;display:none"></div>
+    <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:1.1rem">
+      <div style="width:38px;height:38px;flex-shrink:0;border-radius:11px;background:var(--or-l);border:1px solid rgba(232,97,10,.2);display:flex;align-items:center;justify-content:center;font-size:16px">📍</div>
+      <div>
+        <div class="tag" style="margin-bottom:3px">Selected location</div>
+        <div id="adisp" class="shimmer" style="min-height:20px;font-size:14px;color:var(--ink)"></div>
+        <div id="cdisp" style="font-size:11px;color:var(--ink3);font-family:monospace;margin-top:2px"></div>
+      </div>
+    </div>
+    <button class="btn" id="pinbtn" onclick="toLm()" disabled>Confirm — add landmark photo →</button>
+  </div>
+</div>
+
+<!-- ─── S2: LANDMARK ─── -->
+<div id="s2" class="scr">
+  <div class="lmbg"><div id="mmap"></div></div>
+  <div class="sheet-base" style="border-radius:24px 24px 0 0;border-top:1px solid var(--b)">
+    <div class="dots"><div class="dot done"></div><div class="dot done"></div><div class="dot now"></div><div class="dot"></div></div>
+    <h2 class="h2" style="margin-bottom:5px">Step 2 — Landmark</h2>
+    <p style="font-size:13px;color:var(--ink2);line-height:1.55;margin-bottom:1rem">A photo of your gate helps driver recognise the right house instantly.</p>
+    <div class="pzone" id="pzone">
+      <input type="file" accept="image/*" capture="environment" id="phin" onchange="onPh(this)">
+      <div class="pph">📷</div>
+      <img class="pprv" id="pprv" src="" alt="">
+      <div><div style="font-size:14px;font-weight:500;color:var(--ink)" id="ptitle">Tap to photograph your gate</div><div style="font-size:12px;color:var(--ink3)" id="psub">Driver sees this before arriving</div></div>
+    </div>
+    <div class="field">
+      <div class="fic t">🏷️</div>
+      <textarea id="lmin" class="inp" rows="2" maxlength="120" placeholder="e.g. Red gate, 2nd house after GTB"></textarea>
+    </div>
+    <div class="chips">
+      <div class="chip" onclick="addC(this)">Red gate</div><div class="chip" onclick="addC(this)">Yellow building</div><div class="chip" onclick="addC(this)">Blue fence</div><div class="chip" onclick="addC(this)">Beside mosque</div><div class="chip" onclick="addC(this)">After filling station</div><div class="chip" onclick="addC(this)">2nd house left</div>
+    </div>
+    <button class="btn" onclick="toPh()">Continue →</button>
+    <div class="skip" onclick="toPh()">Skip landmark</div>
+  </div>
+</div>
+
+<!-- ─── S3: PHONE ─── -->
+<div id="s3" class="scr">
+  <div class="sheet-base" style="border-radius:24px 24px 0 0;border-top:1px solid var(--b)">
+    <div class="dots"><div class="dot done"></div><div class="dot done"></div><div class="dot done"></div><div class="dot now"></div></div>
+    <h2 class="h2" style="margin-bottom:5px">Step 3 — Your number</h2>
+    <p style="font-size:13px;color:var(--ink2);line-height:1.55">Driver can call if they get confused. Shown only to them.</p>
+    <div class="field" style="margin-top:1.25rem">
+      <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:500;color:var(--ink2);pointer-events:none">🇳🇬 +234</div>
+      <input class="inp" style="padding-left:76px" id="phin2" type="tel" placeholder="0801 234 5678" maxlength="14" inputmode="numeric">
+    </div>
+    <button class="btn lg" onclick="toShare()"><span style="font-size:18px">✉️</span> Generate live tracking link</button>
+    <div class="skip" onclick="toShare()">Skip — don't share number</div>
+  </div>
+  <div style="position:absolute;inset:0;background:var(--bg);z-index:-1"></div>
+</div>
+
+<!-- ─── S4: SHARE ─── -->
+<div id="s4" class="scr">
+  <div class="cf" id="cf"></div>
+  <span class="pill gr" style="align-self:flex-start;margin-bottom:1rem;animation:up .4s .1s both"><span class="blink gr"></span>Location confirmed</span>
+  <h2 class="h1" style="margin-bottom:.5rem;animation:up .4s .2s both">Send to<br>your driver.</h2>
+  <p style="font-size:14px;color:var(--ink2);line-height:1.65;margin-bottom:1.5rem;animation:up .4s .3s both">Driver sees live routing to you. You watch their car coming on your screen. Like Uber.</p>
+  <div class="dcard" style="animation:up .4s .4s both">
+    <div class="dr"><div style="font-size:15px;width:20px;flex-shrink:0">📍</div><div><div class="tag" style="margin-bottom:2px">Address</div><div style="font-size:14px;color:var(--ink)" id="s4a">—</div></div></div>
+    <div class="dr" id="s4or" style="display:none"><div style="font-size:15px;width:20px;flex-shrink:0">🧾</div><div><div class="tag" style="margin-bottom:2px">Order</div><div style="font-size:14px;color:var(--ink)" id="s4o">—</div></div></div>
+    <div class="dr" id="s4lr" style="display:none"><div style="font-size:15px;width:20px;flex-shrink:0">🏷️</div><div><div class="tag" style="margin-bottom:2px">Landmark</div><div style="font-size:14px;color:var(--ink)" id="s4l">—</div></div></div>
+    <div class="dr" id="s4pr" style="display:none"><div style="font-size:15px;width:20px;flex-shrink:0">📸</div><div style="display:flex;align-items:center;gap:10px"><img id="s4ph" style="width:52px;height:52px;border-radius:9px;object-fit:cover;border:1px solid var(--b)" src="" alt=""><div><div class="tag" style="margin-bottom:2px">Gate photo</div><div style="font-size:13px;color:var(--ink2)">Shown to driver</div></div></div></div>
+    <div class="dr"><div style="font-size:15px;width:20px;flex-shrink:0">🛰️</div><div><div class="tag" style="margin-bottom:2px">GPS</div><div style="font-size:12px;color:var(--ink2);font-family:monospace" id="s4c">—</div></div></div>
+  </div>
+  <div class="tag" style="margin-bottom:.65rem;animation:up .4s .5s both">Driver link (send this)</div>
+  <div class="lnkbox" style="animation:up .4s .55s both"><div class="ltxt" id="ldsp">—</div><button class="cpb" id="cpb" onclick="copyL()">Copy</button></div>
+  <div class="sgrid" style="animation:up .4s .6s both">
+    <button class="sbtn sb-wa" onclick="shareWA()"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp</button>
+    <button class="sbtn sb-sh" onclick="nShare()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Share</button>
+  </div>
+  <button class="btn green" onclick="toTrack()" style="margin-bottom:.75rem;animation:up .4s .65s both"><span style="font-size:18px">👁️</span> Watch driver coming — live</button>
+  <button class="btn ghost" onclick="restart()" style="animation:up .4s .7s both">Start over</button>
+</div>
+
+<!-- ─── S-TRACK: CUSTOMER LIVE VIEW ─── -->
+<div id="s-track" class="scr">
+  <div class="livewrap">
+    <div id="tmap"></div>
+    <div class="etabar">
+      <div class="dots" style="margin-bottom:10px"><div class="dot done-gr"></div><div class="dot done-gr"></div><div class="dot done-gr"></div><div class="dot done-gr"></div></div>
+      <div class="eta-main"><div class="eta-n" id="tetan">—</div><div class="eta-u">min away</div></div>
+      <div class="eta-s" id="tetas">Waiting for driver to start…</div>
+    </div>
+    <div class="rload" id="trload"><div class="rspin"></div>Getting route…</div>
+    <div class="rctr" onclick="rcTrack()">⌖</div>
+  </div>
+  <div class="lsheet">
+    <div class="lhdr">
+      <div style="flex:1"><div class="tag" style="margin-bottom:2px">Your delivery</div><div style="font-size:16px;font-weight:600" id="tord">—</div></div>
+      <span class="pill gr"><span class="blink gr"></span><span id="tstat">Waiting</span></span>
+    </div>
+    <div class="lrow"><div class="lic">📍</div><div><div class="tag" style="margin-bottom:2px">Your pin</div><div class="lval" id="tadr">—</div></div></div>
+    <div class="lrow" id="tlmr" style="display:none"><div class="lic">🏷️</div><div><div class="tag" style="margin-bottom:2px">Landmark</div><div class="lval" id="tlm">—</div></div></div>
+    <div class="lrow"><div class="lic">🚗</div><div><div class="tag" style="margin-bottom:2px">Driver</div><div class="lval" id="tdist">Waiting for driver…</div></div></div>
+  </div>
+</div>
+
+<!-- ─── S-DRV: DRIVER LIVE VIEW ─── -->
+<div id="s-drv" class="scr dark">
+  <div class="livewrap">
+    <div id="dmap"></div>
+    <div class="etabar">
+      <div class="eta-main"><div class="eta-n" id="detan">—</div><div class="eta-u">min</div></div>
+      <div class="eta-s" id="detas">Calculating route…</div>
+    </div>
+    <div class="rload" id="drload"><div class="rspin"></div>Routing…</div>
+    <div class="fabs">
+      <button class="fab fab-gm" id="fgm"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Google Maps</button>
+      <button class="fab fab-wz" id="fwz"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 6.63C19.38 4.66 17.6 3.1 15.5 2.28c-4.28-1.67-9.15.47-10.82 4.75-1.67 4.28.47 9.15 4.75 10.82.87.34 1.77.5 2.65.5 3.37 0 6.55-2.03 7.87-5.35.84-2.16.74-4.52-.41-6.37z"/></svg>Waze</button>
+    </div>
+    <div class="rctr" onclick="rcDrv()">⌖</div>
+  </div>
+  <div class="lsheet dark">
+    <div class="lhdr">
+      <div style="flex:1"><div class="tag" style="margin-bottom:2px">Delivering to</div><div style="font-size:16px;font-weight:600;color:var(--ink)" id="dord">—</div></div>
+      <span class="pill gr"><span class="blink gr"></span>Live</span>
+    </div>
+    <div class="lrow"><div class="lic">📍</div><div><div class="tag" style="margin-bottom:2px">Destination</div><div class="lval" id="dadr">—</div></div></div>
+    <div class="lrow" id="dlmr" style="display:none">
+      <div class="lic">🏷️</div>
+      <div>
+        <div class="tag" style="margin-bottom:2px">Landmark</div>
+        <div class="lval" id="dlm">—</div>
+        <div id="dlmph-note" style="font-size:12px;color:var(--ink2);margin-top:4px;display:none">Photo shared by customer</div>
+        <img id="dlmph" style="width:100%;max-height:90px;object-fit:cover;border-radius:9px;margin-top:6px;border:1px solid var(--b);display:none" src="" alt="">
+      </div>
+    </div>
+    <div class="lrow" id="dphr" style="display:none"><div class="lic">📞</div><div><div class="tag" style="margin-bottom:2px">Customer</div><div id="dphbtn" onclick="callC()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;background:var(--gr-l);color:var(--gr);border:1px solid rgba(22,163,74,.2);font-size:13px;font-weight:600;cursor:pointer;margin-top:2px">📞 Call customer</div></div></div>
+    <div class="lrow"><div class="lic">🧭</div><div><div class="tag" style="margin-bottom:2px">Driver location</div><div class="lval sm" id="gpsPerm">Checking...</div></div></div>
+    <div class="lrow"><div class="lic"></div><div><button class="btn ghost" id="enableLocBtn" onclick="requestDriverLocation()" style="width:100%;margin-top:4px">Enable location</button></div></div>
+    <div class="lrow"><div class="lic">🛰️</div><div><div class="tag" style="margin-bottom:2px">Pin coordinates</div><div class="lval sm" id="dgps">—</div></div></div>
+    <div style="padding-top:.9rem;padding-bottom:.5rem"><button class="btn green" onclick="arrived()"><span style="font-size:16px">✅</span> I've arrived — notify customer</button></div>
+  </div>
+</div>
+
+<!-- ─── S-ARRIVED ─── -->
+<div id="s-arrived" class="scr dark">
+  <div class="acirc">✅</div>
+  <h2 class="h2" style="font-size:1.8rem;margin-bottom:.6rem">Delivered!</h2>
+  <p style="font-size:14px;color:var(--ink2);line-height:1.65;margin-bottom:1.75rem;max-width:260px;text-align:center">Customer is being notified on WhatsApp.</p>
+  <button class="btn wa" style="max-width:280px" id="awabtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp customer</button>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ═══════════════════════════════════════
+// SVG top-down car (faces up = north)
+// ═══════════════════════════════════════
+const CAR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 64" width="40" height="64">
+<defs><filter id="cs"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity=".4"/></filter></defs>
+<g filter="url(#cs)">
+<rect x="7" y="10" width="26" height="44" rx="9" fill="#1D4ED8"/>
+<rect x="10" y="13" width="20" height="13" rx="4" fill="rgba(186,219,255,.75)"/>
+<rect x="10" y="40" width="20" height="10" rx="3" fill="rgba(186,219,255,.5)"/>
+<rect x="3" y="18" width="5" height="9" rx="2.5" fill="#1D4ED8"/>
+<rect x="32" y="18" width="5" height="9" rx="2.5" fill="#1D4ED8"/>
+<rect x="3" y="37" width="5" height="9" rx="2.5" fill="#1D4ED8"/>
+<rect x="32" y="37" width="5" height="9" rx="2.5" fill="#1D4ED8"/>
+<ellipse cx="20" cy="7" rx="5" ry="3.5" fill="#FBBF24" opacity=".9"/>
+<ellipse cx="13" cy="54" rx="3" ry="2.5" fill="#EF4444" opacity=".85"/>
+<ellipse cx="27" cy="54" rx="3" ry="2.5" fill="#EF4444" opacity=".85"/>
+<rect x="14" y="27" width="12" height="8" rx="2" fill="rgba(186,219,255,.3)"/>
+</g></svg>`;
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+const ST={
+  lat:null,lng:null,address:'',coords:'',
+  landmark:'',photoB64:'',photoKey:'',phone:'',order:'',sid:'',
+  map:null,mmap:null,tmap:null,dmap:null,
+  carMk:null,myMk:null,destMk:null,
+  tRouteL:null,dRouteL:null,dRouteOuter:null,
+  driverLat:null,driverLng:null,prevLat:null,prevLng:null,bearing:0,
+  mode:null,syncLoop:null,wakeLock:null,
+  gcT:null,rtT:null,drT:null,
+  s1SheetCollapsed:false,hasDriverTracking:false,
+};
+
+// Optional: If you have an OpenCage API key, fill this value for stronger geocoding.
+const OPEN_CAGE_KEY = 'e57eb016d53c4cfe9f674f2fbbbd45ec';
+const SEARCH_HISTORY_KEY = 'pinpoint_search_history';
+const S1_COLLAPSED_KEY = 'pinpoint_s1_collapsed';
+
+function saveSearchHistory(q){
+  let hist = [];
+  try{ hist = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]'); }catch(e){ hist=[]; }
+  hist = hist.filter(item => item !== q);
+  hist.unshift(q);
+  if(hist.length>8) hist=hist.slice(0,8);
+  localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(hist));
+}
+function loadSearchHistory(){
+  const container = document.getElementById('searchHistory');
+  let hist = [];
+  try{ hist = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]'); }catch(e){ hist=[]; }
+  container.innerHTML='';
+  if(!hist.length){ container.style.display='none'; return; }
+  container.style.display='flex';
+  hist.forEach(item=>{
+    const chip=document.createElement('button');
+    chip.className='chip';
+    chip.textContent=item;
+    chip.onclick=()=>{ document.getElementById('searchInput').value=item; searchAddress(); };
+    container.appendChild(chip);
+  });
+}
+function addToSearchHistory(q){
+  if(!q.trim()) return;
+  saveSearchHistory(q);
+  loadSearchHistory();
+}
+
+function formatAddressComponents(a, displayName, coords){
+  const parts = [
+    (a.house_number && a.road ? a.house_number + ' ' + a.road : a.road || a.pedestrian || a.cycleway || a.footway || a.path),
+    a.neighbourhood || a.suburb || a.village || a.hamlet,
+    a.city_district || a.city || a.town || a.county,
+    a.state_district || a.state,
+    a.country
+  ].filter(Boolean);
+  if(parts.length) return parts.join(', ');
+  if(displayName) return displayName.split(',').slice(0,4).join(',').trim();
+  return coords;
+}
+
+async function reverseGeoOpenCage(lat,lng){
+  if(!OPEN_CAGE_KEY) return null;
+  try{
+    const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${OPEN_CAGE_KEY}&language=en&no_annotations=1&pretty=0`);
+    const d=await r.json();
+    const c=(d.results&&d.results[0])?d.results[0]:null;
+    if(!c||!c.components) return null;
+    return formatAddressComponents(c.components,c.formatted,`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+  }catch(e){
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════
+// SYNC ENGINE
+// ═══════════════════════════════════════
+const Sync={
+  bc:null,
+  init(){ if(DEMO_MODE&&typeof BroadcastChannel!=='undefined') this.bc=new BroadcastChannel('pp_v5'); },
+  async push(sid,lat,lng,brg){
+    const d={lat,lng,brg,ts:Date.now()};
+    if(DEMO_MODE){ try{localStorage.setItem('pp_d_'+sid,JSON.stringify(d));}catch(e){} this.bc?.postMessage({t:'d',sid,...d}); }
+    else{ try{await fetch(`${FB.databaseURL}/pp/${sid}/d.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(e){} }
+  },
+  async setArr(sid){
+    if(DEMO_MODE){ localStorage.setItem('pp_arr_'+sid,'1'); this.bc?.postMessage({t:'arr',sid}); }
+    else{ try{await fetch(`${FB.databaseURL}/pp/${sid}/arr.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:'"1"'});}catch(e){} }
+  },
+  sub(sid,onD,onArr){
+    if(DEMO_MODE){
+      let lt=0;
+      ST.syncLoop=setInterval(()=>{
+        try{
+          const r=localStorage.getItem('pp_d_'+sid);
+          if(r){const d=JSON.parse(r);if(d.ts>lt){lt=d.ts;onD(d);}}
+          if(localStorage.getItem('pp_arr_'+sid)) onArr();
+        }catch(e){}
+      },1500);
+      if(this.bc) this.bc.onmessage=e=>{ if(e.data.sid!==sid)return; if(e.data.t==='d')onD(e.data); if(e.data.t==='arr')onArr(); };
+    } else {
+      ST.syncLoop=setInterval(async()=>{
+        try{
+          const r=await fetch(`${FB.databaseURL}/pp/${sid}/d.json`);
+          const d=await r.json(); if(d)onD(d);
+          const a=await fetch(`${FB.databaseURL}/pp/${sid}/arr.json`);
+          const av=await a.json(); if(av)onArr();
+        }catch(e){}
+      },2000);
+    }
+  }
+};
+
+// ═══════════════════════════════════════
+// URL ROUTING
+// ═══════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  Sync.init();
+  const p=new URLSearchParams(location.search), m=p.get('m');
+  if(m==='drv'){
+    ST.mode='drv'; ST.lat=+p.get('la'); ST.lng=+p.get('lo');
+    ST.address=D(p.get('ad')); ST.landmark=D(p.get('lm')); ST.phone=D(p.get('ph'));
+    ST.order=D(p.get('on')); ST.photoKey=D(p.get('pk')); ST.sid=D(p.get('sid'));
+    ST.photoB64=D(p.get('pb')) || (ST.photoKey?sessionStorage.getItem('ppph_'+ST.photoKey):'') || '';
+    document.body.classList.add('dark');
+    initDrv();
+  } else if(m==='trk'){
+    ST.mode='trk'; ST.lat=+p.get('la'); ST.lng=+p.get('lo');
+    ST.address=D(p.get('ad')); ST.landmark=D(p.get('lm')); ST.order=D(p.get('on')); ST.sid=D(p.get('sid'));
+    initTrk();
+  }
+});
+const E=s=>s?encodeURIComponent(s):'';
+const D=s=>s?decodeURIComponent(s):'';
+
+// ═══════════════════════════════════════
+// SCREEN
+// ═══════════════════════════════════════
+function go(id){
+  document.querySelectorAll('.scr').forEach(s=>{
+    if(s.id===id){s.classList.remove('out');requestAnimationFrame(()=>requestAnimationFrame(()=>s.classList.add('on')));}
+    else{s.classList.remove('on');s.classList.add('out');setTimeout(()=>s.classList.remove('out'),420);}
+  });
+}
+
+// ═══════════════════════════════════════
+// CUSTOMER SETUP
+// ═══════════════════════════════════════
+function toMap(){
+  ST.order=document.getElementById('oin').value.trim();
+  ST.s1SheetCollapsed = localStorage.getItem(S1_COLLAPSED_KEY) === '1';
+  go('s1');
+  loadSearchHistory();
+  setTimeout(gps,350);
+  setTimeout(initS1Sheet, 100);
+}
+function gps(){
+  if(!navigator.geolocation){showE('Geolocation not supported.');return;}
+  navigator.geolocation.getCurrentPosition(
+    p=>initMap(p.coords.latitude,p.coords.longitude),
+    e=>showE({1:'Permission denied.',2:'Location unavailable.',3:'Timed out.'}[e.code]||'Could not locate.'),
+    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+  );
+}
+
+function initS1Sheet(){
+  const sheet=document.querySelector('#s1 .sheet-base');
+  if(!sheet) return;
+  if(sheet.dataset.s1sheetInit==='1') return;
+  sheet.dataset.s1sheetInit='1';
+  const toggle=document.getElementById('sheetToggle');
+  let maxOffset=0;
+
+  const updateMax = ()=>{ maxOffset = Math.max(0, sheet.getBoundingClientRect().height - 72); };
+  const setPosition = (collapsed, animate=true)=>{
+    updateMax();
+    const offset = collapsed ? maxOffset : 0;
+    if(animate) sheet.style.transition='transform .24s ease'; else sheet.style.transition='none';
+    sheet.style.transform = `translateY(${offset}px)`;
+    sheet.classList.toggle('collapsed', collapsed);
+    sheet.classList.toggle('expanded', !collapsed);
+    ST.s1SheetCollapsed = collapsed;
+    localStorage.setItem(S1_COLLAPSED_KEY, collapsed ? '1' : '0');
+    if(toggle){
+      toggle.setAttribute('aria-label', collapsed ? 'Expand sheet' : 'Collapse sheet');
+    }
+  };
+
+  const ensureMeasured = ()=>{
+    updateMax();
+    if(maxOffset <= 0){ requestAnimationFrame(ensureMeasured); return; }
+    setPosition(ST.s1SheetCollapsed, false);
+  };
+  ensureMeasured();
+
+  window.addEventListener('resize', ()=>{ setPosition(ST.s1SheetCollapsed, false); });
+
+  if(toggle){
+    toggle.addEventListener('click', ()=>{ setPosition(!ST.s1SheetCollapsed, true); });
+  }
+}
+function retryG(){ document.getElementById('gerr').style.display='none'; dsmL(); gps(); }
+function manualF(){ document.getElementById('gerr').style.display='none'; initMap(6.5244,3.3792); }
+function useCurrentLocation(){
+  const msg = document.getElementById('searchMsg');
+  msg.style.display='block'; msg.textContent='Getting your current location…';
+  if(!navigator.geolocation){ msg.textContent='Geolocation not supported by this browser.'; return; }
+  navigator.geolocation.getCurrentPosition(
+    p=>{ msg.textContent='Current location found.'; initMap(p.coords.latitude,p.coords.longitude); },
+    e=>{ msg.textContent={1:'Permission denied.',2:'Location unavailable.',3:'Timed out.'}[e.code]||'Could not locate.'; },
+    {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+  );
+}
+function showToast(message, type='info', duration=2000){
+  const t=document.getElementById('toast');
+  if(!t) return;
+  t.textContent = message;
+  t.className = `toast show ${type}`;
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(()=>{ t.className='toast'; }, duration);
+}
+function updateDriverPermissionStatus(state){
+  const el=document.getElementById('gpsPerm');
+  if(!el) return;
+  el.textContent = state;
+  const base = 'lval sm';
+  if(state==='granted') el.className = `${base} pill gr`;
+  else if(state==='prompt') el.className = `${base} pill or`;
+  else if(state==='denied') el.className = `${base} pill`;
+  else el.className = `${base}`;
+}
+function showE(m){ dsmL(); const d=document.getElementById('gerr'); d.querySelector('#emsg').textContent=m; d.style.display='flex'; }
+function dsmL(){ const o=document.getElementById('gload'); o.classList.add('gone'); setTimeout(()=>o.classList.add('hidden'),420); }
+
+function initMap(lat,lng){
+  ST.lat=lat; ST.lng=lng; ST.coords=`${lat.toFixed(6)}, ${lng.toFixed(6)}`; ST.address=ST.coords;
+  dsmL(); document.getElementById('gerr').style.display='none';
+  setA(ST.coords,ST.coords); document.getElementById('pinbtn').disabled=false;
+  geo(lat,lng);
+  if(ST.map){ ST.map.setView([lat,lng],17); return; }
+  ST.map=L.map('lmap',{center:[lat,lng],zoom:17,zoomControl:false,attributionControl:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(ST.map);
+  ST.map.on('movestart',()=>{ document.getElementById('xh').classList.add('up'); clearTimeout(ST.gcT); blankA(); document.getElementById('pinbtn').disabled=true; });
+  ST.map.on('moveend',()=>{
+    document.getElementById('xh').classList.remove('up');
+    const c=ST.map.getCenter(); ST.lat=c.lat; ST.lng=c.lng;
+    ST.coords=`${ST.lat.toFixed(6)}, ${ST.lng.toFixed(6)}`; ST.address=ST.coords;
+    vib(30); ripple(); setA(ST.coords,ST.coords); document.getElementById('pinbtn').disabled=false; geo(ST.lat,ST.lng);
+  });
+}
+function blankA(){ const v=document.getElementById('adisp'); v.textContent=''; v.className='shimmer'; document.getElementById('cdisp').textContent=''; }
+function setA(addr,coords){ const v=document.getElementById('adisp'); v.className=''; v.style.cssText='min-height:20px;font-size:14px;color:var(--ink)'; v.textContent=addr; document.getElementById('cdisp').textContent=coords; }
+async function geo(lat,lng){
+  clearTimeout(ST.gcT);
+  ST.gcT=setTimeout(async()=>{
+    let resolvedAddress = ST.coords;
+    try{
+      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,{headers:{'Accept-Language':'en','User-Agent':'PinPoint/1.0'}});
+      const d=await r.json();
+      const a=d.address||{};
+      resolvedAddress = formatAddressComponents(a,d.display_name,`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+      // If reverse result is still overly generic, fallback to OpenCage where available.
+      if(OPEN_CAGE_KEY && resolvedAddress.toLowerCase().includes('ifako/ijaye')){
+        const alt = await reverseGeoOpenCage(lat,lng);
+        if(alt) resolvedAddress = alt;
+      }
+    }catch(e){
+      // Try alternate geocoder when Nominatim fails
+      if(OPEN_CAGE_KEY){
+        const alt = await reverseGeoOpenCage(lat,lng);
+        if(alt) resolvedAddress = alt;
+      }
+    }
+    ST.address = resolvedAddress || ST.coords;
+    setA(ST.address,ST.coords); ripple();
+  },700);
+}
+
+async function searchAddress(){
+  const q = document.getElementById('searchInput').value.trim();
+  const msg = document.getElementById('searchMsg');
+  const btn = document.getElementById('searchBtn');
+  if(!q){ msg.textContent='Type an address, landmark or street name to search.'; msg.style.display='block'; return; }
+  msg.textContent='Searching…'; msg.style.display='block';
+  btn.disabled=true;
+  const savedText = btn.textContent;
+  btn.innerHTML='<span class="spin"></span>Searching...';
+  try{
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,{headers:{'Accept-Language':'en','User-Agent':'PinPoint/1.0'}});
+    const d = await r.json();
+    if(!Array.isArray(d)||!d.length){ msg.textContent='No location found. Try another query.'; return; }
+    const p = d[0];
+    const lat = parseFloat(p.lat), lng = parseFloat(p.lon);
+    if(Number.isNaN(lat)||Number.isNaN(lng)){ msg.textContent='Invalid geocode result.'; return; }
+    ST.lat=lat; ST.lng=lng; ST.coords=`${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    ST.address=p.display_name || ST.coords;
+    setA(ST.address,ST.coords); document.getElementById('pinbtn').disabled=false;
+    if(ST.map){ ST.map.setView([lat,lng],17); } else { initMap(lat,lng); }
+    geo(lat,lng);
+    msg.textContent='Location found. Drag map for fine tuning, then confirm.';
+    addToSearchHistory(q);
+  }catch(e){ console.error(e); msg.textContent='Search failed. Check your internet connection and try again.'; }
+  finally{ btn.disabled=false; btn.textContent=savedText; loadSearchHistory(); }
+}
+
+function ripple(){ document.querySelectorAll('.rip').forEach(r=>{r.classList.remove('go');void r.offsetWidth;r.classList.add('go')}); setTimeout(()=>document.querySelectorAll('.rip').forEach(r=>r.classList.remove('go')),900); }
+
+function toLm(){
+  if(ST.lat==null || ST.lng==null){
+    alert('Location not set yet. Please pick your location on the map first.');
+    return;
+  }
+
+  go('s2');
+  document.getElementById('pinbtn').disabled = false;
+
+  setTimeout(()=>{
+    try {
+      if(!ST.mmap){
+        ST.mmap=L.map('mmap',{center:[ST.lat,ST.lng],zoom:16,zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,keyboard:false});
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(ST.mmap);
+        L.marker([ST.lat,ST.lng],{icon:L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,30],html:'<div class="cpin"></div>'})}).addTo(ST.mmap);
+      } else {
+        ST.mmap.invalidateSize();
+        ST.mmap.setView([ST.lat,ST.lng],16);
+      }
+    } catch (e) {
+      console.error('toLm init mmap failed', e);
+    }
+  },300);
+}
+function addC(el){ const t=document.getElementById('lmin'); t.value=t.value.trim()?t.value.trim()+', '+el.textContent:el.textContent; t.focus(); }
+function onPh(input){
+  const f=input.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement('canvas'); cv.width=cv.height=120;
+      const ctx=cv.getContext('2d'); const mn=Math.min(img.width,img.height);
+      ctx.drawImage(img,(img.width-mn)/2,(img.height-mn)/2,mn,mn,0,0,120,120);
+      ST.photoB64=cv.toDataURL('image/jpeg',.55);
+      ST.photoKey='pk_'+Math.random().toString(36).slice(2,9);
+      try{sessionStorage.setItem('ppph_'+ST.photoKey,ST.photoB64);}catch(e){}
+      document.getElementById('pprv').src=ST.photoB64;
+      document.getElementById('pzone').classList.add('got');
+      document.getElementById('ptitle').textContent='Photo added ✓';
+      document.getElementById('psub').textContent='Tap to retake'; vib(50);
+    }; img.src=e.target.result;
+  }; r.readAsDataURL(f);
+}
+function toPh(){ ST.landmark=document.getElementById('lmin').value.trim(); go('s3'); }
+function toShare(){
+  ST.phone=document.getElementById('phin2').value.trim();
+  ST.sid=Math.random().toString(36).slice(2,10);
+  const base=location.origin+location.pathname;
+  const pb = ST.photoB64?`&pb=${E(ST.photoB64)}`:'';
+  const q=`la=${ST.lat.toFixed(6)}&lo=${ST.lng.toFixed(6)}&ad=${E(ST.address)}&lm=${E(ST.landmark)}&ph=${E(ST.phone)}&on=${E(ST.order)}&pk=${E(ST.photoKey)}&sid=${ST.sid}${pb}`;
+  window._DRV=`${base}?m=drv&${q}`;
+  window._TRK=`${base}?m=trk&${q}`;
+  // fill S4
+  document.getElementById('s4a').textContent=ST.address||ST.coords;
+  document.getElementById('s4c').textContent=ST.coords;
+  if(ST.order){document.getElementById('s4o').textContent=ST.order;document.getElementById('s4or').style.display='flex';}
+  if(ST.landmark){document.getElementById('s4l').textContent=ST.landmark;document.getElementById('s4lr').style.display='flex';}
+  if(ST.photoB64){document.getElementById('s4ph').src=ST.photoB64;document.getElementById('s4pr').style.display='flex';}
+  const u=window._DRV; document.getElementById('ldsp').textContent=u.length>60?u.slice(0,57)+'…':u;
+  go('s4'); setTimeout(confetti,200);
+}
+function copyL(){
+  navigator.clipboard.writeText(window._DRV).catch(()=>{const t=document.createElement('textarea');t.value=window._DRV;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);});
+  const b=document.getElementById('cpb'); b.textContent='Copied ✓'; b.classList.add('ok'); setTimeout(()=>{b.textContent='Copy';b.classList.remove('ok')},2500);
+}
+function shareWA(){
+  const msg=`📍 *PinPoint — Live Delivery*\n\n${ST.order?'🧾 Order: '+ST.order+'\n':''}📍 ${ST.address}${ST.landmark?'\n🏷️ '+ST.landmark:''}\n\nTap for LIVE navigation with tracking:\n${window._DRV}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
+}
+function nShare(){ if(navigator.share)navigator.share({title:'PinPoint',url:window._DRV}).catch(()=>{});else copyL(); }
+function toTrack(){ go('s-track'); setTimeout(initTrk,300); }
+
+// ═══════════════════════════════════════
+// ROUTING (OSRM — real road routes, free)
+// ═══════════════════════════════════════
+async function route(fLat,fLng,tLat,tLng){
+  try{
+    const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${fLng},${fLat};${tLng},${tLat}?overview=full&geometries=geojson`);
+    const d=await r.json();
+    if(d.code!=='Ok'||!d.routes?.length)return null;
+    return{pts:d.routes[0].geometry.coordinates.map(([ln,la])=>[la,ln]),dur:d.routes[0].duration,dist:d.routes[0].distance};
+  }catch{return null;}
+}
+function drawL(map,pts,old,col,w,dash){
+  if(old&&map.hasLayer(old))map.removeLayer(old);
+  if(!pts?.length)return null;
+  return L.polyline(pts,{color:col,weight:w||5,opacity:.88,lineJoin:'round',lineCap:'round',dashArray:dash}).addTo(map);
+}
+function fmtT(s){ const m=Math.round(s/60); return m<1?'< 1':m>60?Math.floor(m/60)+'h '+(m%60||0)+'m':''+m; }
+function fmtD(m){ return m<1000?Math.round(m)+' m':(m/1000).toFixed(1)+' km'; }
+function brg(la1,ln1,la2,ln2){ const dL=R(ln2-ln1),φ1=R(la1),φ2=R(la2); return(Math.atan2(Math.cos(φ2)*Math.sin(dL),Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(dL))*180/Math.PI+360)%360; }
+function hav(la1,ln1,la2,ln2){ const R2=6371,a=Math.sin(R(la2-la1)/2)**2+Math.cos(R(la1))*Math.cos(R(la2))*Math.sin(R(ln2-ln1)/2)**2; return R2*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
+function R(d){return d*Math.PI/180}
+
+// ═══════════════════════════════════════
+// CUSTOMER TRACKING
+// ═══════════════════════════════════════
+function initTrk(){
+  const lat=ST.lat,lng=ST.lng,sid=ST.sid;
+  document.getElementById('tadr').textContent=ST.address||`${lat.toFixed(5)},${lng.toFixed(5)}`;
+  document.getElementById('tord').textContent=ST.order||'Your order';
+  if(ST.landmark){document.getElementById('tlm').textContent=ST.landmark;document.getElementById('tlmr').style.display='flex';}
+  if(!ST.tmap){
+    ST.tmap=L.map('tmap',{center:[lat,lng],zoom:15,zoomControl:false,attributionControl:false});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(ST.tmap);
+    L.marker([lat,lng],{icon:L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,30],html:'<div class="cpin"></div>'})}).addTo(ST.tmap);
+    L.circle([lat,lng],{radius:18,color:'#E8610A',fillColor:'#E8610A',fillOpacity:.1,weight:1.5,opacity:.35}).addTo(ST.tmap);
+  }
+  if(!sid){go('s-track');return;}
+  Sync.sub(sid,
+    d=>onDrvPos(d.lat,d.lng,d.brg),
+    ()=>{
+      document.getElementById('tstat').textContent='Arrived ✅';
+      document.getElementById('tetan').textContent='0';
+      document.getElementById('tetas').textContent='Your driver has arrived!';
+      document.getElementById('tdist').textContent='Driver is here!';
+      if(ST.syncLoop)clearInterval(ST.syncLoop);
+    }
+  );
+}
+let trtD;
+async function onDrvPos(dLat,dLng,dBrg){
+  // Create / move car marker
+  if(!ST.carMk){
+    ST.carMk=L.marker([dLat,dLng],{icon:L.divIcon({className:'',iconSize:[40,64],iconAnchor:[20,32],html:`<div class="carbox" id="carbox-t">${CAR}</div>`}),zIndexOffset:1000}).addTo(ST.tmap);
+  } else { ST.carMk.setLatLng([dLat,dLng]); }
+  // Rotate car to bearing
+  const cb=document.getElementById('carbox-t');
+  if(cb) cb.style.transform=`rotate(${dBrg}deg)`;
+  // Distance
+  const km=hav(dLat,dLng,ST.lat,ST.lng);
+  document.getElementById('tdist').textContent=fmtD(km*1000)+' away';
+  document.getElementById('tstat').textContent='En route';
+  // Route every 6s max
+  clearTimeout(trtD);
+  trtD=setTimeout(()=>getTrackRoute(dLat,dLng),6000);
+  if(!ST.tRouteL) await getTrackRoute(dLat,dLng);
+}
+async function getTrackRoute(dLat,dLng){
+  document.getElementById('trload').classList.add('on');
+  const rt=await route(dLat,dLng,ST.lat,ST.lng);
+  document.getElementById('trload').classList.remove('on');
+  if(!rt)return;
+  ST.tRouteL=drawL(ST.tmap,rt.pts,ST.tRouteL,'#E8610A',4.5);
+  document.getElementById('tetan').textContent=fmtT(rt.dur);
+  document.getElementById('tetas').textContent=fmtD(rt.dist)+' by road';
+  try{ST.tmap.fitBounds([[dLat,dLng],[ST.lat,ST.lng]],{padding:[80,80],maxZoom:16});}catch(e){}
+}
+function rcTrack(){ if(!ST.tmap)return; if(ST.carMk){try{ST.tmap.fitBounds([[ST.carMk.getLatLng().lat,ST.carMk.getLatLng().lng],[ST.lat,ST.lng]],{padding:[60,60],maxZoom:15});}catch(e){}} else if(ST.lat) ST.tmap.setView([ST.lat,ST.lng],15); }
+
+// ═══════════════════════════════════════
+// DRIVER VIEW
+// ═══════════════════════════════════════
+function initDrv(){
+  go('s-drv');
+  const lat=ST.lat,lng=ST.lng;
+  document.getElementById('dadr').textContent=ST.address||`${lat.toFixed(5)},${lng.toFixed(5)}`;
+  document.getElementById('dord').textContent=ST.order||'Delivery';
+  document.getElementById('dgps').textContent=`${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  const dlmr = document.getElementById('dlmr');
+  const dlm = document.getElementById('dlm');
+  const dlp = document.getElementById('dlmph');
+  const dlpNote = document.getElementById('dlmph-note');
+
+  if(ST.landmark || ST.photoB64 || ST.photoKey){
+    dlmr.style.display='flex';
+    if(ST.landmark) dlm.textContent = ST.landmark;
+
+    if(ST.photoB64){
+      dlp.src = ST.photoB64;
+      dlp.style.display = 'block';
+      dlpNote.textContent = 'Photo shared by customer';
+      dlpNote.style.display = 'block';
+    } else if(ST.photoKey){
+      const stored = sessionStorage.getItem('ppph_'+ST.photoKey);
+      if(stored){
+        ST.photoB64 = stored;
+        dlp.src = ST.photoB64;
+        dlp.style.display = 'block';
+        dlpNote.textContent = 'Photo shared by customer';
+        dlpNote.style.display = 'block';
+      } else {
+        dlpNote.textContent = 'Photo reference exists but image not available (expired or missing).';
+        dlpNote.style.display = 'block';
+      }
+    }
+  }
+
+  if(ST.phone) document.getElementById('dphr').style.display='flex';
+  document.getElementById('fgm').onclick=()=>window.open(`https://maps.google.com/?q=${lat},${lng}`,'_blank');
+  document.getElementById('fwz').onclick=()=>window.open(`https://waze.com/ul?ll=${lat}%2C${lng}&navigate=yes`,'_blank');
+  document.getElementById('awabtn').onclick=()=>{
+    const msg=`✅ *PinPoint — Arrived!*\n\n📍 ${ST.address}${ST.landmark?'\n🏷️ '+ST.landmark:''}${ST.order?'\n🧾 '+ST.order:''}`;
+    if(ST.phone){const n=ST.phone.replace(/\D/g,'').replace(/^0/,'234');window.open(`https://wa.me/${n}?text=${E(msg)}`,'_blank');}
+    else window.open(`https://wa.me/?text=${E(msg)}`,'_blank');
+  };
+  if(!ST.dmap){
+    ST.dmap=L.map('dmap',{center:[lat,lng],zoom:15,zoomControl:false,attributionControl:false});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(ST.dmap);
+    ST.destMk=L.marker([lat,lng],{icon:L.divIcon({className:'',iconSize:[40,48],iconAnchor:[20,48],html:`<div style="display:flex;flex-direction:column;align-items:center"><div class="dpin"></div></div>`})}).addTo(ST.dmap);
+  }
+  wl(); requestDriverLocation();
+}
+let dtD,wid;
+function watchDrv(){
+  if(!navigator.geolocation){ showE('Geolocation not supported.'); showToast('Geolocation is not supported by this browser.','warn'); updateDriverPermissionStatus('unsupported'); return; }
+
+  const startWatch = ()=>{
+    if(wid) navigator.geolocation.clearWatch(wid);
+    wid=navigator.geolocation.watchPosition(async p=>{
+      const dLat=p.coords.latitude,dLng=p.coords.longitude;
+      ST.driverLat=dLat; ST.driverLng=dLng;
+      if(!ST.hasDriverTracking){ ST.hasDriverTracking=true; showToast('Driver location tracking active.', 'success'); }
+      if(ST.prevLat!=null&&(Math.abs(dLat-ST.prevLat)>0.00001||Math.abs(dLng-ST.prevLng)>0.00001))
+        ST.bearing=brg(ST.prevLat,ST.prevLng,dLat,dLng);
+      ST.prevLat=dLat; ST.prevLng=dLng;
+      if(!ST.myMk){
+        ST.myMk=L.marker([dLat,dLng],{icon:L.divIcon({className:'',iconSize:[18,18],iconAnchor:[9,9],html:'<div class="mypos"></div>'})}).addTo(ST.dmap);
+      } else { ST.myMk.setLatLng([dLat,dLng]); }
+      Sync.push(ST.sid,dLat,dLng,Math.round(ST.bearing));
+      const km=hav(dLat,dLng,ST.lat,ST.lng);
+      document.getElementById('detas').textContent=fmtD(km*1000)+' remaining';
+      clearTimeout(dtD);
+      dtD=setTimeout(()=>getDrvRoute(dLat,dLng),8000);
+      if(!ST.dRouteL) await getDrvRoute(dLat,dLng);
+    },e=>{
+      if(e.code===1){ showE('Permission denied. Please allow location access in Settings.'); showToast('Driver location permission denied.', 'warn'); updateDriverPermissionStatus('denied'); }
+      else if(e.code===2){ showE('Location unavailable.'); showToast('Location unavailable.', 'warn'); }
+      else if(e.code===3){ showE('Timeout while getting location.'); showToast('Timeout while getting location.', 'warn'); }
+      else { showE('Could not locate driver.'); showToast('Could not locate driver.', 'warn'); }
+    },{enableHighAccuracy:true,maximumAge:0});
+  };
+
+  if(navigator.permissions){
+    navigator.permissions.query({name:'geolocation'}).then(status=>{
+      updateDriverPermissionStatus(status.state);
+      status.onchange = ()=> updateDriverPermissionStatus(status.state);
+      if(status.state==='granted'){
+        showToast('Location permission granted. Starting tracking.', 'success');
+        startWatch();
+      } else if(status.state==='prompt'){
+        showToast('Please allow location access in the browser prompt.', 'info');
+        navigator.geolocation.getCurrentPosition(p=>{ showToast('Permission granted. Tracking started.', 'success'); startWatch(); }, e=>{
+          if(e.code===1){ showE('Permission denied. Please allow location access in Settings.'); showToast('Permission denied.', 'warn'); updateDriverPermissionStatus('denied'); }
+          else if(e.code===2){ showE('Location unavailable.'); showToast('Location unavailable.', 'warn'); }
+          else if(e.code===3){ showE('Timed out.'); showToast('Timed out.', 'warn'); }
+          else { showE('Could not locate driver.'); showToast('Could not locate driver.', 'warn'); }
+        },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+      } else {
+        showE('Location permission is denied. Enable it from Settings.');
+        showToast('Location permission denied. Please enable it from settings.', 'warn');
+      }
+    }).catch(()=>{ showToast('Unable to query permissions. Trying location request.', 'info'); startWatch(); });
+  } else {
+    navigator.geolocation.getCurrentPosition(p=>{ showToast('Permission granted. Tracking started.', 'success'); startWatch(); }, e=>{
+      if(e.code===1){ showE('Permission denied.'); showToast('Permission denied.', 'warn'); updateDriverPermissionStatus('denied'); }
+      else if(e.code===2){ showE('Location unavailable.'); showToast('Location unavailable.', 'warn'); }
+      else if(e.code===3){ showE('Timed out.'); showToast('Timed out.', 'warn'); }
+      else { showE('Could not locate driver.'); showToast('Could not locate driver.', 'warn'); }
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+  }
+}
+
+function requestDriverLocation(){
+  const btn=document.getElementById('enableLocBtn');
+  if(btn) btn.disabled=true;
+  showToast('Checking driver location permission...', 'info');
+  if(!navigator.geolocation){ showToast('Geolocation not supported.','warn'); updateDriverPermissionStatus('unsupported'); if(btn) btn.disabled=false; return; }
+
+  if(navigator.permissions){
+    navigator.permissions.query({name:'geolocation'}).then(status=>{
+      updateDriverPermissionStatus(status.state);
+      status.onchange=()=>updateDriverPermissionStatus(status.state);
+      if(status.state==='granted'){
+        showToast('Location permission granted. Starting tracking.', 'success');
+        watchDrv();
+      } else if(status.state==='prompt'){
+        showToast('Please allow location access in the prompt.', 'info');
+        navigator.geolocation.getCurrentPosition(p=>{ showToast('Permission granted. Tracking started.', 'success'); watchDrv(); }, e=>{
+          if(e.code===1){ showE('Permission denied.'); showToast('Permission denied.', 'warn'); updateDriverPermissionStatus('denied'); }
+          else if(e.code===2){ showE('Location unavailable.'); showToast('Location unavailable.', 'warn'); }
+          else if(e.code===3){ showE('Timed out.'); showToast('Timed out.', 'warn'); }
+          else { showE('Could not locate driver.'); showToast('Could not locate driver.', 'warn'); }
+          if(btn) btn.disabled=false;
+        },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+      } else {
+        showE('Location permission is denied. Enable it from Settings.');
+        showToast('Location permission denied. Enable it from settings.', 'warn');
+        if(btn) btn.disabled=false;
+      }
+    }).catch(()=>{ showToast('Unable to check permissions. Attempting location request.', 'info'); watchDrv(); if(btn) btn.disabled=false; });
+  } else {
+    navigator.geolocation.getCurrentPosition(p=>{ showToast('Permission granted. Tracking started.', 'success'); watchDrv(); }, e=>{
+      if(e.code===1){ showE('Permission denied.'); showToast('Permission denied.', 'warn'); updateDriverPermissionStatus('denied'); }
+      else if(e.code===2){ showE('Location unavailable.'); showToast('Location unavailable.', 'warn'); }
+      else if(e.code===3){ showE('Timed out.'); showToast('Timed out.', 'warn'); }
+      else { showE('Could not locate driver.'); showToast('Could not locate driver.', 'warn'); }
+      if(btn) btn.disabled=false;
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+  }
+  if(btn) btn.disabled=false;
+}
+
+async function getDrvRoute(dLat,dLng){
+  document.getElementById('drload').classList.add('on');
+  const rt=await route(dLat,dLng,ST.lat,ST.lng);
+  document.getElementById('drload').classList.remove('on');
+  if(!rt)return;
+  // white outer + orange inner (like Google Maps nav style)
+  ST.dRouteOuter=drawL(ST.dmap,rt.pts,ST.dRouteOuter,'rgba(255,255,255,.25)',9);
+  ST.dRouteL=drawL(ST.dmap,rt.pts,ST.dRouteL,'#38BDF8',5);
+  document.getElementById('detan').textContent=fmtT(rt.dur);
+  document.getElementById('detas').textContent=fmtD(rt.dist)+' by road';
+  try{ST.dmap.fitBounds([[dLat,dLng],[ST.lat,ST.lng]],{padding:[80,100],maxZoom:16});}catch(e){}
+}
+function rcDrv(){ if(!ST.dmap)return; if(ST.driverLat){try{ST.dmap.fitBounds([[ST.driverLat,ST.driverLng],[ST.lat,ST.lng]],{padding:[60,80],maxZoom:15});}catch(e){}}else ST.dmap.setView([ST.lat,ST.lng],15); }
+function callC(){ const n=ST.phone.replace(/\D/g,''); window.location.href=`tel:+234${n.replace(/^0/,'')}`; }
+function arrived(){
+  Sync.setArr(ST.sid);
+  if(wid)navigator.geolocation.clearWatch(wid);
+  if(ST.syncLoop)clearInterval(ST.syncLoop);
+  try{ST.wakeLock?.release();}catch(e){}
+  vib([60,40,120]); go('s-arrived');
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
+async function wl(){try{if(navigator.wakeLock)ST.wakeLock=await navigator.wakeLock.request('screen');}catch(e){}}
+function confetti(){
+  const c=document.getElementById('cf'); c.innerHTML='';
+  const cl=['#E8610A','#16A34A','#1A1714','#4285F4','#FFBE0B','#EC4899','#8B5CF6'];
+  for(let i=0;i<55;i++){const p=document.createElement('div');p.className='cfp';const sz=4+Math.random()*8;p.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz}px;background:${cl[i%cl.length]};border-radius:${Math.random()>.5?'50%':'3px'};animation-delay:${Math.random()*.9}s;animation-duration:${1.5+Math.random()*.8}s;transform:rotate(${Math.random()*360}deg)`;c.appendChild(p);}
+}
+function restart(){
+  ['landmark','photoB64','photoKey','phone','order','address','coords','sid'].forEach(k=>ST[k]='');
+  ['lmin','phin2','oin'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cf').innerHTML='';
+  const pz=document.getElementById('pzone'); pz.classList.remove('got');
+  document.getElementById('ptitle').textContent='Tap to photograph your gate';
+  document.getElementById('psub').textContent='Driver sees this before arriving';
+  document.getElementById('pprv').src='';
+  ['s4or','s4lr','s4pr'].forEach(id=>document.getElementById(id).style.display='none');
+  if(ST.map) ST.map.setView([ST.lat||6.5244,ST.lng||3.3792],17);
+  go('s0');
+}
+</script>
+</body>
+</html>
