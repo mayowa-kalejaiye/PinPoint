@@ -93,6 +93,18 @@ textarea.inp{resize:none}
 .handle:active{transform:scale(.95)}
 .handle .arrow-icon{width:10px;height:10px;border-right:2px solid var(--ink2);border-bottom:2px solid var(--ink2);transform:rotate(45deg);transition:transform .2s}
 #s1 .sheet-base.collapsed .arrow-icon{transform:rotate(-135deg)}
+.icon{display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;color:var(--ink2)}
+.icon-pin::before{content:'⌖'}
+.icon-road::before{content:'≋'}
+.icon-car::before{content:'⧖'}
+.icon-time::before{content:'⧗'}
+.icon-doc::before{content:'⎘'}
+.icon-order::before{content:'№'}
+.icon-camera::before{content:'⏺'}
+.icon-eye::before{content:'⌁'}
+.icon-search::before{content:'🔍'}
+.icon-tag::before{content:'✪'}
+.icon-photo::before{content:'⌂'}
     .sheet-base{position:absolute;bottom:0;left:0;right:0;background:var(--s);border-radius:22px 22px 0 0;border-top:1px solid var(--b);padding:1.25rem 1.5rem 2.75rem;box-shadow:0 -6px 28px rgba(0,0,0,.07);z-index:9999;transition:transform .24s ease;transform:translateY(0)}
     #s1 .sheet-base.collapsed{transform:translateY(calc(100% - 72px))}
     #s1 .sheet-base.expanded{transform:translateY(0)}
@@ -242,18 +254,18 @@ textarea.inp{resize:none}
     <h1 class="h1" style="animation:up .5s .35s both;margin-bottom:.9rem">Guide your driver <em style="font-style:italic;color:var(--or)">exactly</em> to your door.</h1>
     <p style="font-size:14px;font-weight:300;color:var(--ink2);line-height:1.7;max-width:280px;animation:up .5s .5s both">Like Uber — drop a pin, your driver gets live routing and you watch them coming to you. No app.</p>
     <div class="feats" style="animation:up .5s .6s both">
-      <div class="feat"><div class="fic-sm">📍</div><span>Real GPS pin, not a typed address</span></div>
-      <div class="feat"><div class="fic-sm">🛣️</div><span>Actual road routing — not a straight line</span></div>
-      <div class="feat"><div class="fic-sm">🚗</div><span>Animated car, both sides see it live</span></div>
-      <div class="feat"><div class="fic-sm">⏱️</div><span>ETA countdown updating as they drive</span></div>
+      <div class="feat"><div class="fic-sm icon icon-pin"></div><span>Real GPS pin, not a typed address</span></div>
+      <div class="feat"><div class="fic-sm icon icon-road"></div><span>Actual road routing — not a straight line</span></div>
+      <div class="feat"><div class="fic-sm icon icon-car"></div><span>Animated car, both sides see it live</span></div>
+      <div class="feat"><div class="fic-sm icon icon-time"></div><span>ETA countdown updating as they drive</span></div>
     </div>
   </div>
   <div class="s0-foot">
     <div class="field" style="animation:up .5s .7s both">
-      <div class="fic">🧾</div>
+      <div class="fic icon icon-doc"></div>
       <input class="inp" id="oin" type="text" placeholder="Order number (optional)">
     </div>
-    <button class="btn lg" onclick="toMap()" style="animation:up .5s .8s both"><span style="font-size:18px">📍</span> Set my delivery location</button>
+    <button class="btn lg" onclick="toMap()" style="animation:up .5s .8s both"><span class="icon icon-pin" style="font-size:18px;width:20px;height:20px"></span> Set my delivery location</button>
     <p style="text-align:center;font-size:12px;color:var(--ink3);margin-top:.65rem;animation:up .5s .9s both">Free · No app · Works on any phone</p>
   </div>
 </div>
@@ -274,7 +286,7 @@ textarea.inp{resize:none}
   <div class="sheet-base">
     <button type="button" class="handle" id="sheetToggle" aria-label="Toggle sheet"><span class="arrow-icon"></span></button>
     <div class="field" style="margin-bottom:.6rem">
-      <div class="fic">🔍</div>
+      <div class="fic icon icon-search"></div>
       <input class="inp" id="searchInput" type="text" placeholder="Search address or landmark" onkeydown="if(event.key==='Enter'){searchAddress();}">
     </div>
     <div style="display:flex;gap:8px;margin-bottom:0.9rem">
@@ -284,7 +296,7 @@ textarea.inp{resize:none}
     <div id="searchMsg" style="font-size:12px;color:var(--ink3);margin-bottom:1rem;display:none"></div>
     <div id="searchHistory" class="chips" style="margin-bottom:1rem;display:none"></div>
     <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:1.1rem">
-      <div style="width:38px;height:38px;flex-shrink:0;border-radius:11px;background:var(--or-l);border:1px solid rgba(232,97,10,.2);display:flex;align-items:center;justify-content:center;font-size:16px">📍</div>
+      <div style="width:38px;height:38px;flex-shrink:0;border-radius:11px;background:var(--or-l);border:1px solid rgba(232,97,10,.2);display:flex;align-items:center;justify-content:center;font-size:16px" class="icon icon-pin"></div>
       <div>
         <div class="tag" style="margin-bottom:3px">Selected location</div>
         <div id="adisp" class="shimmer" style="min-height:20px;font-size:14px;color:var(--ink)"></div>
@@ -304,12 +316,12 @@ textarea.inp{resize:none}
     <p style="font-size:13px;color:var(--ink2);line-height:1.55;margin-bottom:1rem">A photo of your gate helps driver recognise the right house instantly.</p>
     <div class="pzone" id="pzone">
       <input type="file" accept="image/*" capture="environment" id="phin" onchange="onPh(this)">
-      <div class="pph">📷</div>
+      <div class="pph icon icon-photo"></div>
       <img class="pprv" id="pprv" src="" alt="">
       <div><div style="font-size:14px;font-weight:500;color:var(--ink)" id="ptitle">Tap to photograph your gate</div><div style="font-size:12px;color:var(--ink3)" id="psub">Driver sees this before arriving</div></div>
     </div>
     <div class="field">
-      <div class="fic t">🏷️</div>
+      <div class="fic t icon icon-tag"></div>
       <textarea id="lmin" class="inp" rows="2" maxlength="120" placeholder="e.g. Red gate, 2nd house after GTB"></textarea>
     </div>
     <div class="chips">
@@ -343,11 +355,11 @@ textarea.inp{resize:none}
   <h2 class="h1" style="margin-bottom:.5rem;animation:up .4s .2s both">Send to<br>your driver.</h2>
   <p style="font-size:14px;color:var(--ink2);line-height:1.65;margin-bottom:1.5rem;animation:up .4s .3s both">Driver sees live routing to you. You watch their car coming on your screen. Like Uber.</p>
   <div class="dcard" style="animation:up .4s .4s both">
-    <div class="dr"><div style="font-size:15px;width:20px;flex-shrink:0">📍</div><div><div class="tag" style="margin-bottom:2px">Address</div><div style="font-size:14px;color:var(--ink)" id="s4a">—</div></div></div>
-    <div class="dr" id="s4or" style="display:none"><div style="font-size:15px;width:20px;flex-shrink:0">🧾</div><div><div class="tag" style="margin-bottom:2px">Order</div><div style="font-size:14px;color:var(--ink)" id="s4o">—</div></div></div>
-    <div class="dr" id="s4lr" style="display:none"><div style="font-size:15px;width:20px;flex-shrink:0">🏷️</div><div><div class="tag" style="margin-bottom:2px">Landmark</div><div style="font-size:14px;color:var(--ink)" id="s4l">—</div></div></div>
-    <div class="dr" id="s4pr" style="display:none"><div style="font-size:15px;width:20px;flex-shrink:0">📸</div><div style="display:flex;align-items:center;gap:10px"><img id="s4ph" style="width:52px;height:52px;border-radius:9px;object-fit:cover;border:1px solid var(--b)" src="" alt=""><div><div class="tag" style="margin-bottom:2px">Gate photo</div><div style="font-size:13px;color:var(--ink2)">Shown to driver</div></div></div></div>
-    <div class="dr"><div style="font-size:15px;width:20px;flex-shrink:0">🛰️</div><div><div class="tag" style="margin-bottom:2px">GPS</div><div style="font-size:12px;color:var(--ink2);font-family:monospace" id="s4c">—</div></div></div>
+    <div class="dr"><div style="font-size:15px;width:20px;flex-shrink:0" class="icon icon-pin"></div><div><div class="tag" style="margin-bottom:2px">Address</div><div style="font-size:14px;color:var(--ink)" id="s4a">—</div></div></div>
+    <div class="dr" id="s4or" style="display:none"><div style="font-size:15px;width:20px;flex-shrink:0" class="icon icon-doc"></div><div><div class="tag" style="margin-bottom:2px">Order</div><div style="font-size:14px;color:var(--ink)" id="s4o">—</div></div></div>
+    <div class="dr" id="s4lr" style="display:none"><div style="font-size:15px;width:20px;flex-shrink:0" class="icon icon-doc"></div><div><div class="tag" style="margin-bottom:2px">Landmark</div><div style="font-size:14px;color:var(--ink)" id="s4l">—</div></div></div>
+    <div class="dr" id="s4pr" style="display:none"><div style="font-size:15px;width:20px;flex-shrink:0" class="icon icon-camera"></div><div style="display:flex;align-items:center;gap:10px"><img id="s4ph" style="width:52px;height:52px;border-radius:9px;object-fit:cover;border:1px solid var(--b)" src="" alt=""><div><div class="tag" style="margin-bottom:2px">Gate photo</div><div style="font-size:13px;color:var(--ink2)">Shown to driver</div></div></div></div>
+    <div class="dr"><div style="font-size:15px;width:20px;flex-shrink:0" class="icon icon-pin"></div><div><div class="tag" style="margin-bottom:2px">GPS</div><div style="font-size:12px;color:var(--ink2);font-family:monospace" id="s4c">—</div></div></div>
   </div>
   <div class="tag" style="margin-bottom:.65rem;animation:up .4s .5s both">Driver link (send this)</div>
   <div class="lnkbox" style="animation:up .4s .55s both"><div class="ltxt" id="ldsp">—</div><button class="cpb" id="cpb" onclick="copyL()">Copy</button></div>
@@ -355,7 +367,7 @@ textarea.inp{resize:none}
     <button class="sbtn sb-wa" onclick="shareWA()"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp</button>
     <button class="sbtn sb-sh" onclick="nShare()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Share</button>
   </div>
-  <button class="btn green" onclick="toTrack()" style="margin-bottom:.75rem;animation:up .4s .65s both"><span style="font-size:18px">👁️</span> Watch driver coming — live</button>
+  <button class="btn green" onclick="toTrack()" style="margin-bottom:.75rem;animation:up .4s .65s both"><span class="icon icon-eye" style="font-size:18px;width:18px;height:18px"></span> Watch driver coming — live</button>
   <button class="btn ghost" onclick="restart()" style="animation:up .4s .7s both">Start over</button>
 </div>
 
@@ -376,9 +388,9 @@ textarea.inp{resize:none}
       <div style="flex:1"><div class="tag" style="margin-bottom:2px">Your delivery</div><div style="font-size:16px;font-weight:600" id="tord">—</div></div>
       <span class="pill gr"><span class="blink gr"></span><span id="tstat">Waiting</span></span>
     </div>
-    <div class="lrow"><div class="lic">📍</div><div><div class="tag" style="margin-bottom:2px">Your pin</div><div class="lval" id="tadr">—</div></div></div>
-    <div class="lrow" id="tlmr" style="display:none"><div class="lic">🏷️</div><div><div class="tag" style="margin-bottom:2px">Landmark</div><div class="lval" id="tlm">—</div></div></div>
-    <div class="lrow"><div class="lic">🚗</div><div><div class="tag" style="margin-bottom:2px">Driver</div><div class="lval" id="tdist">Waiting for driver…</div></div></div>
+    <div class="lrow"><div class="lic icon icon-pin"></div><div><div class="tag" style="margin-bottom:2px">Your pin</div><div class="lval" id="tadr">—</div></div></div>
+    <div class="lrow" id="tlmr" style="display:none"><div class="lic icon icon-doc"></div><div><div class="tag" style="margin-bottom:2px">Landmark</div><div class="lval" id="tlm">—</div></div></div>
+    <div class="lrow"><div class="lic icon icon-car"></div><div><div class="tag" style="margin-bottom:2px">Driver</div><div class="lval" id="tdist">Waiting for driver…</div></div></div>
   </div>
 </div>
 
@@ -402,9 +414,9 @@ textarea.inp{resize:none}
       <div style="flex:1"><div class="tag" style="margin-bottom:2px">Delivering to</div><div style="font-size:16px;font-weight:600;color:var(--ink)" id="dord">—</div></div>
       <span class="pill gr"><span class="blink gr"></span>Live</span>
     </div>
-    <div class="lrow"><div class="lic">📍</div><div><div class="tag" style="margin-bottom:2px">Destination</div><div class="lval" id="dadr">—</div></div></div>
+    <div class="lrow"><div class="lic icon icon-pin"></div><div><div class="tag" style="margin-bottom:2px">Destination</div><div class="lval" id="dadr">—</div></div></div>
     <div class="lrow" id="dlmr" style="display:none">
-      <div class="lic">🏷️</div>
+      <div class="lic icon icon-tag"></div>
       <div>
         <div class="tag" style="margin-bottom:2px">Landmark</div>
         <div class="lval" id="dlm">—</div>
@@ -412,17 +424,17 @@ textarea.inp{resize:none}
         <img id="dlmph" style="width:100%;max-height:90px;object-fit:cover;border-radius:9px;margin-top:6px;border:1px solid var(--b);display:none" src="" alt="">
       </div>
     </div>
-    <div class="lrow" id="dphr" style="display:none"><div class="lic">📞</div><div><div class="tag" style="margin-bottom:2px">Customer</div><div id="dphbtn" onclick="callC()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;background:var(--gr-l);color:var(--gr);border:1px solid rgba(22,163,74,.2);font-size:13px;font-weight:600;cursor:pointer;margin-top:2px">📞 Call customer</div></div></div>
-    <div class="lrow"><div class="lic">🧭</div><div><div class="tag" style="margin-bottom:2px">Driver location</div><div class="lval sm" id="gpsPerm">Checking...</div></div></div>
+    <div class="lrow" id="dphr" style="display:none"><div class="lic icon icon-doc"></div><div><div class="tag" style="margin-bottom:2px">Customer</div><div id="dphbtn" onclick="callC()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;background:var(--gr-l);color:var(--gr);border:1px solid rgba(22,163,74,.2);font-size:13px;font-weight:600;cursor:pointer;margin-top:2px"><span class="icon icon-doc" style="font-size:13px;width:14px;height:14px"></span> Call customer</div></div></div>
+    <div class="lrow"><div class="lic icon icon-car"></div><div><div class="tag" style="margin-bottom:2px">Driver location</div><div class="lval sm" id="gpsPerm">Checking...</div></div></div>
     <div class="lrow"><div class="lic"></div><div><button class="btn ghost" id="enableLocBtn" onclick="requestDriverLocation()" style="width:100%;margin-top:4px">Enable location</button></div></div>
-    <div class="lrow"><div class="lic">🛰️</div><div><div class="tag" style="margin-bottom:2px">Pin coordinates</div><div class="lval sm" id="dgps">—</div></div></div>
-    <div style="padding-top:.9rem;padding-bottom:.5rem"><button class="btn green" onclick="arrived()"><span style="font-size:16px">✅</span> I've arrived — notify customer</button></div>
+    <div class="lrow"><div class="lic icon icon-pin"></div><div><div class="tag" style="margin-bottom:2px">Pin coordinates</div><div class="lval sm" id="dgps">—</div></div></div>
+    <div style="padding-top:.9rem;padding-bottom:.5rem"><button class="btn green" onclick="arrived()"><span class="icon icon-car" style="font-size:16px;width:16px;height:16px"></span> I've arrived — notify customer</button></div>
   </div>
 </div>
 
 <!-- ─── S-ARRIVED ─── -->
 <div id="s-arrived" class="scr dark">
-  <div class="acirc">✅</div>
+  <div class="acirc">✓</div>
   <h2 class="h2" style="font-size:1.8rem;margin-bottom:.6rem">Delivered!</h2>
   <p style="font-size:14px;color:var(--ink2);line-height:1.65;margin-bottom:1.75rem;max-width:260px;text-align:center">Customer is being notified on WhatsApp.</p>
   <button class="btn wa" style="max-width:280px" id="awabtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp customer</button>
@@ -897,7 +909,7 @@ function initTrk(){
   Sync.sub(sid,
     d=>onDrvPos(d.lat,d.lng,d.brg),
     ()=>{
-      document.getElementById('tstat').textContent='Arrived ✅';
+      document.getElementById('tstat').textContent='Arrived ✓';
       document.getElementById('tetan').textContent='0';
       document.getElementById('tetas').textContent='Your driver has arrived!';
       document.getElementById('tdist').textContent='Driver is here!';
@@ -1133,5 +1145,6 @@ function restart(){
   go('s0');
 }
 </script>
+<div style="position:fixed;bottom:0;left:0;right:0;padding:10px 12px;text-align:center;background:rgba(255,255,255,.9);color:#1A1714;font-size:13px;border-top:1px solid rgba(26,23,20,.12);z-index:10060;">For business pricing — WhatsApp: +23408074944583</div>
 </body>
 </html>
