@@ -805,7 +805,20 @@ function onPh(input){
   }; r.readAsDataURL(f);
 }
 function toPh(){ ST.landmark=document.getElementById('lmin').value.trim(); go('s3'); }
-function toShare(){
+async function shortenUrl(url){
+  try {
+    const api = 'https://is.gd/create.php?format=json&url=' + encodeURIComponent(url);
+    const r = await fetch(api);
+    if(!r.ok) throw new Error('Shortener response ' + r.status);
+    const j = await r.json();
+    if(j.shorturl) return j.shorturl;
+  } catch (e) {
+    console.warn('URL shortener failed', e);
+  }
+  return url;
+}
+
+async function toShare(){
   ST.phone=document.getElementById('phin2').value.trim();
   ST.sid=Math.random().toString(36).slice(2,10);
   const base=location.origin+location.pathname;
@@ -813,24 +826,35 @@ function toShare(){
   const q=`la=${ST.lat.toFixed(6)}&lo=${ST.lng.toFixed(6)}&ad=${E(ST.address)}&lm=${E(ST.landmark)}&ph=${E(ST.phone)}&on=${E(ST.order)}&pk=${E(ST.photoKey)}&sid=${ST.sid}${pb}`;
   window._DRV=`${base}?m=drv&${q}`;
   window._TRK=`${base}?m=trk&${q}`;
+
   // fill S4
   document.getElementById('s4a').textContent=ST.address||ST.coords;
   document.getElementById('s4c').textContent=ST.coords;
   if(ST.order){document.getElementById('s4o').textContent=ST.order;document.getElementById('s4or').style.display='flex';}
   if(ST.landmark){document.getElementById('s4l').textContent=ST.landmark;document.getElementById('s4lr').style.display='flex';}
   if(ST.photoB64){document.getElementById('s4ph').src=ST.photoB64;document.getElementById('s4pr').style.display='flex';}
-  const u=window._DRV; document.getElementById('ldsp').textContent=u.length>60?u.slice(0,57)+'…':u;
+
+  document.getElementById('ldsp').textContent='Shortening link...';
+  window._DRVS = await shortenUrl(window._DRV);
+  const u = window._DRVS || window._DRV;
+  document.getElementById('ldsp').textContent = u.length>60 ? u.slice(0,57)+'…' : u;
+
   go('s4'); setTimeout(confetti,200);
 }
+function getSendLink(){
+  return window._DRVS||window._DRV||'';
+}
 function copyL(){
-  navigator.clipboard.writeText(window._DRV).catch(()=>{const t=document.createElement('textarea');t.value=window._DRV;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);});
+  const link=getSendLink();
+  navigator.clipboard.writeText(link).catch(()=>{const t=document.createElement('textarea');t.value=link;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);});
   const b=document.getElementById('cpb'); b.textContent='Copied ✓'; b.classList.add('ok'); setTimeout(()=>{b.textContent='Copy';b.classList.remove('ok')},2500);
 }
 function shareWA(){
-  const msg=`📍 *PinPoint — Live Delivery*\n\n${ST.order?'🧾 Order: '+ST.order+'\n':''}📍 ${ST.address}${ST.landmark?'\n🏷️ '+ST.landmark:''}\n\nTap for LIVE navigation with tracking:\n${window._DRV}`;
+  const link=getSendLink();
+  const msg=`📍 *PinPoint — Live Delivery*\n\n${ST.order?'🧾 Order: '+ST.order+'\n':''}📍 ${ST.address}${ST.landmark?'\n🏷️ '+ST.landmark:''}\n\nTap for LIVE navigation with tracking:\n${link}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
 }
-function nShare(){ if(navigator.share)navigator.share({title:'PinPoint',url:window._DRV}).catch(()=>{});else copyL(); }
+function nShare(){ if(navigator.share)navigator.share({title:'PinPoint',url:getSendLink()}).catch(()=>{});else copyL(); }
 function toTrack(){ go('s-track'); setTimeout(initTrk,300); }
 
 // ═══════════════════════════════════════
