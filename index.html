@@ -23,7 +23,7 @@
    ╚══════════════════════════════════════════════════════╝ */
 const DEMO_MODE = false;
 const FB = {
-  databaseURL: "https://pinpoint-4561d-default-rtdb.europe-west1.firebasedatabase.app"
+  databaseURL: window.FB_DATABASE_URL || 'https://pinpoint-4561d-default-rtdb.europe-west1.firebasedatabase.app'
 };
 </script>
 
@@ -466,8 +466,9 @@ const ST={
   s1SheetCollapsed:false,hasDriverTracking:false,
 };
 
-// Optional: If you have an OpenCage API key, fill this value for stronger geocoding.
-const OPEN_CAGE_KEY = 'e57eb016d53c4cfe9f674f2fbbbd45ec';
+// Optional: For stronger geocoding set "OPEN_CAGE_KEY" in an external config file or environment variable.
+// Do not store secret keys directly in index.html in production.
+const OPEN_CAGE_KEY = window.OPEN_CAGE_KEY || '';
 const SEARCH_HISTORY_KEY = 'pinpoint_search_history';
 const S1_COLLAPSED_KEY = 'pinpoint_s1_collapsed';
 
