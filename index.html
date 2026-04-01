@@ -1371,7 +1371,7 @@ function shareWA(){
 }
 function nShare(){ if(navigator.share)navigator.share({title:'PinPoint',url:getSendLink()}).catch(()=>{});else copyL(); }
 function toTrack(){
-  // Persist tracking session so a refresh can resume live view
+  // Persist tracking session so a refresh (or new tab) can resume live view
   try{
     const payload = JSON.stringify({
       sid: ST.sid,
@@ -1384,6 +1384,16 @@ function toTrack(){
     sessionStorage.setItem('pp_track', payload);
     localStorage.setItem('pp_track', payload);
   }catch(e){ console.warn('Failed to persist track session', e); }
+
+  const trackLink = window._TRK || '';
+
+  // Prefer opening live view in a new tab/window; fall back to in-page if blocked
+  if(trackLink){
+    const w = window.open(trackLink, '_blank', 'noopener');
+    if(w) return;
+  }
+
+  // Popup blocked or link missing: use in-page view
   go('s-track'); setTimeout(initTrk,300);
 }
 function backToShare(){
