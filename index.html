@@ -952,13 +952,11 @@ function updateS0CustomerMarker(){
 function setHomeMapVisibility(){
   const panel=document.getElementById('s0-map-panel');
   if(!panel) return;
-  if(window.innerWidth >= 920){
-    panel.style.display='block';
-    initS0Map();
-    if(ST.s0map){ ST.s0map.invalidateSize(); }
-  } else {
-    panel.style.display='none';
-  }
+  // Always show the home map (desktop + mobile) and keep a sane height
+  panel.style.display='block';
+  panel.style.minHeight = (window.innerWidth >= 920 ? '320px' : '260px');
+  initS0Map();
+  if(ST.s0map){ ST.s0map.invalidateSize(); }
 }
 
 const E=s=>s?encodeURIComponent(s):'';
