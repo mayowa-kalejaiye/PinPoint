@@ -971,7 +971,8 @@ function initS0Map(){
   ST.s0map = L.map('s0map',{center:[6.5244,3.3792],zoom:12,zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,keyboard:false});
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(ST.s0map);
   ST.s0Circle = L.circle([6.5244,3.3792],{radius:1500,color:'#E8610A',fillColor:'#E8610A',fillOpacity:0.07,weight:1.5,opacity:0.65}).addTo(ST.s0map);
-  updateHomeMapInfo('—','—','Waiting for customer');
+  // Show a realistic default snapshot instead of empty placeholders
+  updateHomeMapInfo('6 min','2.4 km','En route');
   ST.s0map.on('move',()=>{});
 }
 
