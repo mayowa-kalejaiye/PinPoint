@@ -989,7 +989,6 @@ function go(id){
 // CUSTOMER SETUP
 // ═══════════════════════════════════════
 function toMap(){
-  if(!requirePrivacy()) return;
   ST.order=document.getElementById('oin').value.trim();
   ST.s1SheetCollapsed = localStorage.getItem(S1_COLLAPSED_KEY) === '1';
   loadSession();
