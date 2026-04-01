@@ -34,12 +34,13 @@
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 
+<!-- Runtime config (injects FIREBASE_* / CLOUDINARY_* / OPEN_CAGE_KEY) -->
+<script src="./config.js"></script>
+
 <!-- Firebase (compat) for anonymous auth to secure Realtime Database access -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
-<!-- Runtime config (injects FIREBASE_* / CLOUDINARY_* / OPEN_CAGE_KEY) -->
-<script src="./config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
 
@@ -634,6 +635,11 @@ const ST={
   gcT:null,rtT:null,drT:null,
   s1SheetCollapsed:false,drvSheetCollapsed:false,hasDriverTracking:false,
 };
+
+// Kick off Firebase auth early so DB calls have a token in prod
+document.addEventListener('DOMContentLoaded', () => {
+  initFirebaseAuth();
+});
 
 // Firebase Auth (anonymous) to secure DB access
 let firebaseInitPromise=null;
