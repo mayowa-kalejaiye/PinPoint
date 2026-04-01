@@ -221,6 +221,13 @@ textarea.inp{resize:none}
 .s0-content{position:relative;z-index:10;display:flex;flex-direction:column;flex:1;min-height:0;}
 .s0-body{padding:3rem 1.75rem 0;flex:1;display:flex;flex-direction:column;justify-content:center;max-width:560px;}
 .s0-foot{padding:1.25rem 1.75rem 3rem;max-width:560px;}
+.privacy-banner{position:fixed;bottom:0;left:0;right:0;z-index:12000;background:rgba(26,23,20,.94);color:#fff;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 -4px 18px rgba(0,0,0,.25);backdrop-filter:blur(6px);}
+.privacy-banner.hidden{display:none}
+.privacy-text{font-size:12px;line-height:1.6;flex:1;min-width:240px}
+.privacy-link{color:#FBBF24;font-weight:700;text-decoration:underline;}
+.privacy-actions{display:flex;gap:10px;align-items:center;flex-shrink:0}
+.privacy-btn{background:var(--or);color:#fff;border:none;padding:7px 14px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 3px 10px rgba(232,97,10,.25);transition:transform .12s,box-shadow .12s;}
+.privacy-btn:active{transform:scale(.97);box-shadow:0 2px 8px rgba(232,97,10,.2)}
 
 @media(min-width:920px){
   .s0-row{flex-direction:row;}
@@ -1788,12 +1795,26 @@ function restart(){
   if(ST.map) ST.map.setView([ST.lat||6.5244,ST.lng||3.3792],17);
   go('s0');
 }
+
+// ═══════════════════════════════════════
+// PRIVACY BANNER
+// ═══════════════════════════════════════
+function initPrivacyBanner(){
+  const pb=document.getElementById('privacyBanner');
+  if(!pb) return;
+  const accepted=localStorage.getItem('privacy_accepted')==='1';
+  if(accepted){ pb.classList.add('hidden'); return; }
+  pb.classList.remove('hidden');
+  const btn=pb.querySelector('[data-privacy-accept]');
+  if(btn){ btn.onclick=()=>{ localStorage.setItem('privacy_accepted','1'); pb.classList.add('hidden'); }; }
+}
+document.addEventListener('DOMContentLoaded',initPrivacyBanner);
 </script>
-<!-- SECURITY: Privacy Policy Banner -->
-<div id="privacyBanner" style="position:fixed;bottom:0;left:0;right:0;background:#333;color:#fff;padding:12px;text-align:center;font-size:12px;z-index:900;">
-  We collect location data to provide delivery tracking. 
-  <a href="/privacy.html" style="color:#4fc3f7;text-decoration:underline;">Privacy Policy</a> | 
-  <button onclick="localStorage.setItem('privacy_accepted','1');document.getElementById('privacyBanner').style.display='none';" style="background:#4fc3f7;border:0;padding:4px 8px;cursor:pointer;border-radius:3px;font-weight:600;">Accept</button>
+<div id="privacyBanner" class="privacy-banner hidden">
+  <div class="privacy-text">We collect location data to provide delivery tracking. Read our <a class="privacy-link" href="privacy.html">Privacy policy</a>.</div>
+  <div class="privacy-actions">
+    <button type="button" class="privacy-btn" data-privacy-accept>Accept</button>
+  </div>
 </div>
 </body>
 </html>
