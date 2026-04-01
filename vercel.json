@@ -1,9 +1,4 @@
 {
-  "env": {
-    "OPEN_CAGE_KEY": "@openCageKey",
-    "SMS_API_KEY": "@smsApiKey",
-    "FB_DATABASE_URL": "@fbDatabaseUrl"
-  },
   "headers": [
     {
       "source": "/(.*)",
