@@ -536,6 +536,14 @@ const ST={
 const OPEN_CAGE_KEY = window.OPEN_CAGE_KEY || '';
 const SEARCH_HISTORY_KEY = 'pinpoint_search_history';
 const S1_COLLAPSED_KEY = 'pinpoint_s1_collapsed';
+const SESSION_KEYS = {
+  lastLocation: 'pinpoint_last_location',
+  lastPhone: 'pinpoint_last_phone',
+  lastOrder: 'pinpoint_last_order',
+  lastLandmark: 'pinpoint_last_landmark',
+  lastPreferences: 'pinpoint_last_preferences'
+};
+const SMS_ENDPOINT = window.SMS_ENDPOINT || '/api/send-sms'; // Configure SMS endpoint URL
 
 function saveSearchHistory(q){
   let hist = [];
@@ -566,6 +574,44 @@ function addToSearchHistory(q){
   loadSearchHistory();
 }
 
+// ═══════════════════════════════════════
+// PERSISTENT SESSION MANAGEMENT
+// ═══════════════════════════════════════
+function saveSession(){
+  const session = {
+    lat: ST.lat,
+    lng: ST.lng,
+    address: ST.address,
+    coords: ST.coords,
+    phone: ST.phone,
+    order: ST.order,
+    landmark: ST.landmark,
+    timestamp: Date.now()
+  };
+  try{ localStorage.setItem(SESSION_KEYS.lastLocation, JSON.stringify(session)); }catch(e){ console.error('Failed to save session:', e); }
+}
+
+function loadSession(){
+  try{
+    const session = JSON.parse(localStorage.getItem(SESSION_KEYS.lastLocation) || '{}');
+    const AGE_LIMIT = 7 * 24 * 60 * 60 * 1000; // 7 days
+    if(session.timestamp && Date.now() - session.timestamp < AGE_LIMIT){
+      if(session.lat && session.lng){ ST.lat = session.lat; ST.lng = session.lng; ST.address = session.address; ST.coords = session.coords; }
+      if(session.phone) ST.phone = session.phone;
+      if(session.order) ST.order = session.order;
+      if(session.landmark) ST.landmark = session.landmark;
+      return true;
+    }
+  }catch(e){ console.error('Failed to load session:', e); }
+  return false;
+}
+
+function clearSession(){
+  try{
+    Object.values(SESSION_KEYS).forEach(key => localStorage.removeItem(key));
+  }catch(e){ console.error('Failed to clear session:', e); }
+}
+
 function formatAddressComponents(a, displayName, coords){
   const parts = [
     (a.house_number && a.road ? a.house_number + ' ' + a.road : a.road || a.pedestrian || a.cycleway || a.footway || a.path),
@@ -582,14 +628,85 @@ function formatAddressComponents(a, displayName, coords){
 async function reverseGeoOpenCage(lat,lng){
   if(!OPEN_CAGE_KEY) return null;
   try{
-    const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${OPEN_CAGE_KEY}&language=en&no_annotations=1&pretty=0`);
+    const r=await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${OPEN_CAGE_KEY}&language=en&no_annotations=1&pretty=0`,{timeout:8000});
     const d=await r.json();
     const c=(d.results&&d.results[0])?d.results[0]:null;
     if(!c||!c.components) return null;
     return formatAddressComponents(c.components,c.formatted,`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
   }catch(e){
+    console.error('OpenCage geocoding failed:', e);
     return null;
   }
+}
+
+// ═══════════════════════════════════════
+// SMS NOTIFICATIONS
+// ═══════════════════════════════════════
+async function sendSMSNotification(phone, message, type='update'){
+  if(!phone || !message) return false;
+  try{
+    const response = await fetch(SMS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: phone.replace(/\D/g, '').replace(/^0/, '234'),
+        message: message,
+        type: type,
+        timestamp: Date.now()
+      })
+    });
+    return response.ok;
+  }catch(e){
+    console.error('SMS send failed:', e);
+    return false;
+  }
+}
+
+function notifyDriverUpdate(status, eta, distance){
+  if(!ST.phone) return;
+  const msg = `🚗 PinPoint Update\n- Status: ${status}\n- ETA: ${eta}\n- Distance: ${distance}\n📍 ${ST.address}`;
+  sendSMSNotification(ST.phone, msg, 'driver_update').catch(e => console.error('SMS notification failed:', e));
+}
+
+function notifyDriverArrival(){
+  if(!ST.phone) return;
+  const msg = `✅ Driver has arrived at your location!\n📍 ${ST.address}${ST.landmark ? '\n🏷️ ' + ST.landmark : ''}`;
+  sendSMSNotification(ST.phone, msg, 'driver_arrival').catch(e => console.error('Arrival SMS failed:', e));
+}
+
+// ═══════════════════════════════════════
+// HOME MAP AUTO-FIT BOUNDS
+// ═══════════════════════════════════════
+function fitHomeMapBounds(){
+  if(!ST.s0map) return;
+  try{
+    if(ST.driverLat != null && ST.driverLng != null && ST.lat != null && ST.lng != null){
+      const bounds = L.latLngBounds([[ST.driverLat, ST.driverLng], [ST.lat, ST.lng]]);
+      ST.s0map.fitBounds(bounds, {padding: [100, 100], maxZoom: 15});
+    } else if(ST.lat != null && ST.lng != null){
+      ST.s0map.setView([ST.lat, ST.lng], 13);
+    }
+  }catch(e){ console.error('Failed to fit home map bounds:', e); }
+}
+
+function fitDriverMapBounds(){
+  if(!ST.dmap) return;
+  try{
+    if(ST.driverLat != null && ST.driverLng != null && ST.lat != null && ST.lng != null){
+      const bounds = L.latLngBounds([[ST.driverLat, ST.driverLng], [ST.lat, ST.lng]]);
+      ST.dmap.fitBounds(bounds, {padding: [80, 100], maxZoom: 16});
+    }
+  }catch(e){ console.error('Failed to fit driver map bounds:', e); }
+}
+
+function fitCustomerMapBounds(){
+  if(!ST.tmap) return;
+  try{
+    if(ST.carMk && ST.lat != null && ST.lng != null){
+      const bounds = L.latLngBounds([[ST.driverLat || ST.lat, ST.driverLng || ST.lng], [ST.lat, ST.lng]]);
+      ST.tmap.fitBounds(bounds, {padding: [80, 100], maxZoom: 15});
+    }
+  }catch(e){ console.error('Failed to fit customer map bounds:', e); }
 }
 
 // ═══════════════════════════════════════
@@ -707,6 +824,7 @@ function go(id){
 function toMap(){
   ST.order=document.getElementById('oin').value.trim();
   ST.s1SheetCollapsed = localStorage.getItem(S1_COLLAPSED_KEY) === '1';
+  loadSession();
   go('s1');
   loadSearchHistory();
   setTimeout(gps,350);
@@ -869,7 +987,7 @@ function toLm(){
     alert('Location not set yet. Please pick your location on the map first.');
     return;
   }
-
+  saveSession();
   go('s2');
   document.getElementById('pinbtn').disabled = false;
 
@@ -891,6 +1009,8 @@ function toLm(){
 function addC(el){ const t=document.getElementById('lmin'); t.value=t.value.trim()?t.value.trim()+', '+el.textContent:el.textContent; t.focus(); }
 function onPh(input){
   const f=input.files[0]; if(!f)return;
+  ST.landmark = document.getElementById('lmin').value.trim();
+  saveSession();
   const r=new FileReader();
   r.onload=e=>{
     const img=new Image();
@@ -1233,7 +1353,8 @@ async function getDrvRoute(dLat,dLng){
   document.getElementById('detas').textContent=fmtD(rt.dist)+' by road';
   updateHomeMapInfo(fmtT(rt.dur)+' min', fmtD(rt.dist), 'Driver routing');
   showHomeRouteOnMap(rt.pts);
-  try{ST.dmap.fitBounds([[dLat,dLng],[ST.lat,ST.lng]],{padding:[80,100],maxZoom:16});}catch(e){}
+  fitDriverMapBounds();
+  notifyDriverUpdate('En route', fmtT(rt.dur), fmtD(rt.dist));
 }
 function rcDrv(){ if(!ST.dmap)return; if(ST.driverLat){try{ST.dmap.fitBounds([[ST.driverLat,ST.driverLng],[ST.lat,ST.lng]],{padding:[60,80],maxZoom:15});}catch(e){}}else ST.dmap.setView([ST.lat,ST.lng],15); }
 function callC(){ const n=ST.phone.replace(/\D/g,''); window.location.href=`tel:+234${n.replace(/^0/,'')}`; }
@@ -1242,6 +1363,7 @@ function arrived(){
   if(wid)navigator.geolocation.clearWatch(wid);
   if(ST.syncLoop)clearInterval(ST.syncLoop);
   try{ST.wakeLock?.release();}catch(e){}
+  notifyDriverArrival();
   vib([60,40,120]); go('s-arrived');
 }
 
@@ -1264,6 +1386,7 @@ function restart(){
   document.getElementById('psub').textContent='Driver sees this before arriving';
   document.getElementById('pprv').src='';
   ['s4or','s4lr','s4pr'].forEach(id=>document.getElementById(id).style.display='none');
+  clearSession();
   if(ST.map) ST.map.setView([ST.lat||6.5244,ST.lng||3.3792],17);
   go('s0');
 }
