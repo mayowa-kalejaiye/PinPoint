@@ -4,24 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PinPoint — Live Tracking</title>
+<meta name="description" content="Real-time delivery tracking. Share your location with drivers, track arrivals, and get instant updates. Fast, secure, and simple.">
+
+<!-- Open Graph Meta Tags for Social Sharing -->
+<meta property="og:title" content="PinPoint — Live Delivery Tracking">
+<meta property="og:description" content="Real-time driver tracking. Share location, get instant ETA updates, and track deliveries live. Fast and reliable.">
+<meta property="og:image" content="./pinpoint.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pinpoint-go.vercel.app">
+<meta property="og:site_name" content="PinPoint">
+
+<!-- Twitter Card Meta Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PinPoint — Live Delivery Tracking">
+<meta name="twitter:description" content="Real-time driver tracking. Share location, get instant ETA updates, and track deliveries live.">
+<meta name="twitter:image" content="./pinpoint.png">
+<meta name="twitter:site" content="@pinpoint_app">
+
+<!-- Additional Meta Tags -->
+<meta name="theme-color" content="#FDFAF4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PinPoint">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,500;9..144,1,300&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 
 <script>
-/* ╔══════════════════════════════════════════════════════╗
-   ║  PINPOINT CONFIG                                     ║
-   ║                                                      ║
-   ║  DEMO_MODE = true  → works in two browser tabs now  ║
-   ║  No Firebase setup needed for demo.                  ║
-   ║                                                      ║
-   ║  For real cross-device use:                          ║
-   ║  1. Go to console.firebase.google.com                ║
-   ║  2. New project → Realtime Database → Test mode      ║
-   ║  3. Paste your config below                          ║
-   ║  4. Set DEMO_MODE = false                            ║
-   ╚══════════════════════════════════════════════════════╝ */
+
 const DEMO_MODE = false;
 const FB = {
   databaseURL: window.FB_DATABASE_URL || 'https://pinpoint-4561d-default-rtdb.europe-west1.firebasedatabase.app'
@@ -110,6 +124,26 @@ textarea.inp{resize:none}
     #s1 .sheet-base.collapsed{transform:translateY(calc(100% - 72px))}
     #s1 .sheet-base.expanded{transform:translateY(0)}
     .lsheet{z-index:10020}
+.lsheet.collapsed{transform:translateY(calc(100% - 72px));pointer-events:none !important;overflow:hidden}
+.lsheet.collapsed > *:not(.drv-handle){visibility:hidden;pointer-events:none}
+.lsheet.collapsed .drv-handle{visibility:visible;pointer-events:all !important;position:relative;z-index:10050}
+.lsheet.expanded{pointer-events:all;overflow-y:auto}
+.lsheet.expanded > *{visibility:visible}
+.drv-handle{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);margin:0 auto 1rem;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,background .2s}
+.drv-handle:hover{background:rgba(255,255,255,.15)}
+.drv-handle:active{transform:scale(.95)}
+.drv-handle .arrow-icon{width:10px;height:10px;border-right:2px solid rgba(255,255,255,.5);border-bottom:2px solid rgba(255,255,255,.5);transform:rotate(45deg);transition:transform .2s}
+#s-drv .lsheet.collapsed .arrow-icon{transform:rotate(-135deg)}
+
+/* IMAGE MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);opacity:0;pointer-events:none;transition:opacity .24s;z-index:9999;display:flex;align-items:center;justify-content:center}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-content{background:var(--s);border-radius:16px;max-width:90vw;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:pop .24s cubic-bezier(.4,0,.2,1)}
+.modal-content img{width:100%;height:auto;border-radius:14px}
+.modal-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.4);border:none;color:#fff;font-size:24px;cursor:pointer;transition:background .2s;z-index:10000}
+.modal-close:hover{background:rgba(0,0,0,.6)}
+#dlmph{cursor:pointer !important;transition:opacity .2s}
+#dlmph:hover{opacity:.85}
 
 /* PHOTO */
 .pzone{border:1.5px dashed var(--b2);border-radius:14px;padding:1rem;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;margin-bottom:1rem;position:relative;overflow:hidden}
@@ -462,7 +496,8 @@ textarea.inp{resize:none}
     </div>
     <div class="rctr" onclick="rcDrv()">⌖</div>
   </div>
-  <div class="lsheet dark">
+  <div class="lsheet dark" id="drvSheet">
+    <!-- Driver sheet toggle disabled -->
     <div class="lhdr">
       <div style="flex:1"><div class="tag" style="margin-bottom:2px">Delivering to</div><div style="font-size:16px;font-weight:600;color:var(--ink)" id="dord">—</div></div>
       <span class="pill gr"><span class="blink gr"></span>Live</span>
@@ -474,7 +509,7 @@ textarea.inp{resize:none}
         <div class="tag" style="margin-bottom:2px">Landmark</div>
         <div class="lval" id="dlm">—</div>
         <div id="dlmph-note" style="font-size:12px;color:var(--ink2);margin-top:4px;display:none">Photo shared by customer</div>
-        <img id="dlmph" style="width:100%;max-height:90px;object-fit:cover;border-radius:9px;margin-top:6px;border:1px solid var(--b);display:none" src="" alt="">
+        <img id="dlmph" onclick="openImageModal()" style="width:100%;max-height:90px;object-fit:cover;border-radius:9px;margin-top:6px;border:1px solid var(--b);display:none;cursor:pointer" src="" alt="Landmark photo">
       </div>
     </div>
     <div class="lrow" id="dphr" style="display:none"><div class="lic icon icon-doc"></div><div><div class="tag" style="margin-bottom:2px">Customer</div><div id="dphbtn" onclick="callC()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;background:var(--gr-l);color:var(--gr);border:1px solid rgba(22,163,74,.2);font-size:13px;font-weight:600;cursor:pointer;margin-top:2px"><span class="icon icon-doc" style="font-size:13px;width:14px;height:14px"></span> Call customer</div></div></div>
@@ -491,6 +526,13 @@ textarea.inp{resize:none}
   <h2 class="h2" style="font-size:1.8rem;margin-bottom:.6rem">Delivered!</h2>
   <p style="font-size:14px;color:var(--ink2);line-height:1.65;margin-bottom:1.75rem;max-width:260px;text-align:center">Customer is being notified on WhatsApp.</p>
   <button class="btn wa" style="max-width:280px" id="awabtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp customer</button>
+</div>
+
+<div id="imageModal" class="modal-overlay" onclick="if(event.target===this)closeImageModal()">
+  <button class="modal-close" onclick="closeImageModal()" aria-label="Close modal">×</button>
+  <div class="modal-content">
+    <img id="modalImage" style="width:100%;height:auto" src="" alt="Landmark photo">
+  </div>
 </div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -528,7 +570,7 @@ const ST={
   driverLat:null,driverLng:null,prevLat:null,prevLng:null,bearing:0,
   mode:null,syncLoop:null,wakeLock:null,
   gcT:null,rtT:null,drT:null,
-  s1SheetCollapsed:false,hasDriverTracking:false,
+  s1SheetCollapsed:false,drvSheetCollapsed:false,hasDriverTracking:false,
 };
 
 // Optional: For stronger geocoding set "OPEN_CAGE_KEY" in an external config file or environment variable.
@@ -536,6 +578,7 @@ const ST={
 const OPEN_CAGE_KEY = window.OPEN_CAGE_KEY || '';
 const SEARCH_HISTORY_KEY = 'pinpoint_search_history';
 const S1_COLLAPSED_KEY = 'pinpoint_s1_collapsed';
+const DRV_COLLAPSED_KEY = 'pinpoint_drv_collapsed';
 const SESSION_KEYS = {
   lastLocation: 'pinpoint_last_location',
   lastPhone: 'pinpoint_last_phone',
@@ -874,6 +917,58 @@ function initS1Sheet(){
   if(toggle){
     toggle.addEventListener('click', ()=>{ setPosition(!ST.s1SheetCollapsed, true); });
   }
+}
+function initDrvSheet(){
+  // Driver sheet toggle disabled - function is now a no-op
+  return;
+  const sheet=document.getElementById('drvSheet');
+  if(!sheet) return;
+  if(sheet.dataset.drvsheetInit==='1') return;
+  sheet.dataset.drvsheetInit='1';
+  const toggle=document.getElementById('drvSheetToggle');
+  let maxOffset=0;
+
+  const updateMax = ()=>{ maxOffset = Math.max(0, sheet.getBoundingClientRect().height - 72); };
+  const setPosition = (collapsed, animate=true)=>{
+    updateMax();
+    const offset = collapsed ? maxOffset : 0;
+    if(animate) sheet.style.transition='transform .24s ease'; else sheet.style.transition='none';
+    sheet.style.transform = `translateY(${offset}px)`;
+    sheet.classList.toggle('collapsed', collapsed);
+    sheet.classList.toggle('expanded', !collapsed);
+    ST.drvSheetCollapsed = collapsed;
+    localStorage.setItem(DRV_COLLAPSED_KEY, collapsed ? '1' : '0');
+    if(toggle){
+      toggle.setAttribute('aria-label', collapsed ? 'Expand sheet' : 'Collapse sheet');
+    }
+  };
+
+  const ensureMeasured = ()=>{
+    updateMax();
+    if(maxOffset <= 0){ requestAnimationFrame(ensureMeasured); return; }
+    setPosition(ST.drvSheetCollapsed, false);
+  };
+  ensureMeasured();
+
+  window.addEventListener('resize', ()=>{ setPosition(ST.drvSheetCollapsed, false); });
+
+  if(toggle){
+    toggle.addEventListener('click', ()=>{ setPosition(!ST.drvSheetCollapsed, true); });
+  }
+}
+function openImageModal(){
+  const imgSrc=document.getElementById('dlmph').src;
+  if(!imgSrc) return;
+  const modal=document.getElementById('imageModal');
+  const modalImg=document.getElementById('modalImage');
+  modalImg.src=imgSrc;
+  modal.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeImageModal(){
+  const modal=document.getElementById('imageModal');
+  modal.classList.remove('show');
+  document.body.style.overflow='auto';
 }
 function retryG(){ document.getElementById('gerr').style.display='none'; dsmL(); gps(); }
 function manualF(){ document.getElementById('gerr').style.display='none'; initMap(6.5244,3.3792); }
@@ -1240,6 +1335,9 @@ function initDrv(){
     ST.destMk=L.marker([lat,lng],{icon:L.divIcon({className:'',iconSize:[40,48],iconAnchor:[20,48],html:`<div style="display:flex;flex-direction:column;align-items:center"><div class="dpin"></div></div>`})}).addTo(ST.dmap);
   }
   wl(); requestDriverLocation();
+  ST.drvSheetCollapsed = localStorage.getItem(DRV_COLLAPSED_KEY) === '1';
+  // Driver sheet toggle disabled
+  // setTimeout(initDrvSheet, 100);
 }
 let dtD,wid;
 function watchDrv(){
@@ -1391,6 +1489,6 @@ function restart(){
   go('s0');
 }
 </script>
-<div style="position:fixed;bottom:0;left:0;right:0;padding:10px 12px;text-align:center;background:rgba(255,255,255,.9);color:#1A1714;font-size:13px;border-top:1px solid rgba(26,23,20,.12);z-index:10060;">For business pricing — WhatsApp: +23408074944583</div>
+<div style="position:fixed;bottom:var(--footer-height,0);right:1.5rem;padding:10px 16px;text-align:center;background:var(--or);color:#fff;font-size:13px;border-radius:100px;z-index:10005;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 12px rgba(232,97,10,.3);" onclick="window.open('https://wa.me/23408074944583?text=Hi%20PinPoint%2C%20interested%20in%20business%20pricing','_blank')">inquire Business Pricing</div>
 </body>
 </html>
