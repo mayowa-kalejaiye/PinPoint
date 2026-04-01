@@ -944,10 +944,12 @@ window.addEventListener('DOMContentLoaded',()=>{
     // Only load base64 from session cache (avoid giant URLs that caused HTTP 431)
     ST.photoB64 = (ST.photoKey ? sessionStorage.getItem('ppph_'+ST.photoKey) : '') || '';
     document.body.classList.add('dark');
+    go('s-drv');
     setTimeout(initDrv, 100); // Ensure DOM is ready
   } else if(m==='trk'){
     ST.mode='trk'; ST.lat=+p.get('la'); ST.lng=+p.get('lo');
     ST.address=D(p.get('ad')); ST.landmark=D(p.get('lm')); ST.order=D(p.get('on')); ST.sid=D(p.get('sid'));
+    go('s-track');
     setTimeout(initTrk, 100); // Ensure DOM is ready
   } else {
     // Resume tracking after refresh if a session exists
