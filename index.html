@@ -889,11 +889,19 @@ const Sync={
         try{
           const dUrl = await authUrl(`${FB.databaseURL}/pp/${sid}/d.json`);
           const aUrl = await authUrl(`${FB.databaseURL}/pp/${sid}/arr.json`);
+
           const r=await fetch(dUrl);
-          const d=await r.json(); if(d)onD(d);
+          if(r.ok){
+            const d=await r.json();
+            if(d && typeof d.lat==='number' && typeof d.lng==='number'){ onD(d); }
+          }
+
           const a=await fetch(aUrl);
-          const av=await a.json(); if(av)onArr();
-        }catch(e){}
+          if(a.ok){
+            const av=await a.json();
+            if(av===1||av==='1'||av===true) onArr();
+          }
+        }catch(e){ /* swallow sync errors */ }
       },2000);
     }
   }
@@ -923,6 +931,17 @@ window.addEventListener('DOMContentLoaded',()=>{
     ST.mode='trk'; ST.lat=+p.get('la'); ST.lng=+p.get('lo');
     ST.address=D(p.get('ad')); ST.landmark=D(p.get('lm')); ST.order=D(p.get('on')); ST.sid=D(p.get('sid'));
     setTimeout(initTrk, 100); // Ensure DOM is ready
+  } else {
+    // Resume tracking after refresh if a session exists
+    try{
+      const cache = sessionStorage.getItem('pp_track');
+      if(cache){
+        const t = JSON.parse(cache);
+        ST.mode='trk';
+        ST.lat=t.lat; ST.lng=t.lng; ST.address=t.address; ST.landmark=t.landmark; ST.order=t.order; ST.sid=t.sid;
+        setTimeout(initTrk, 100);
+      }
+    }catch(e){ console.warn('Track resume failed', e); }
   }
 });
 
@@ -1331,7 +1350,20 @@ function shareWA(){
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
 }
 function nShare(){ if(navigator.share)navigator.share({title:'PinPoint',url:getSendLink()}).catch(()=>{});else copyL(); }
-function toTrack(){ go('s-track'); setTimeout(initTrk,300); }
+function toTrack(){
+  // Persist tracking session so a refresh can resume live view
+  try{
+    sessionStorage.setItem('pp_track', JSON.stringify({
+      sid: ST.sid,
+      lat: ST.lat,
+      lng: ST.lng,
+      address: ST.address,
+      landmark: ST.landmark,
+      order: ST.order
+    }));
+  }catch(e){ console.warn('Failed to persist track session', e); }
+  go('s-track'); setTimeout(initTrk,300);
+}
 function backToShare(){
   if(ST.syncLoop){ clearInterval(ST.syncLoop); ST.syncLoop=null; }
   go('s4');
