@@ -70,7 +70,7 @@ const FB = {
 // Cloudinary (set via config.js / env; unsigned preset recommended for client uploads)
 const CLOUDINARY_CLOUD_NAME = window.CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_UPLOAD_PRESET = window.CLOUDINARY_UPLOAD_PRESET || '';
-const CLOUDINARY_FOLDER = window.CLOUDINARY_FOLDER || 'pinpoint';
+const CLOUDINARY_FOLDER = window.CLOUDINARY_FOLDER || '';
 </script>
 
 <style>
@@ -201,7 +201,7 @@ textarea.inp{resize:none}
 /* S0 Desktop map panel */
 #s0{overflow:hidden}
 .s0-row{display:flex;flex-direction:column;min-height:100%;height:100%;}
-.s0-map-panel{display:none;position:relative;flex:1;min-height:320px;overflow:hidden;pointer-events:auto}
+.s0-map-panel{display:none;position:relative;flex:1;min-height:320px;overflow:hidden;pointer-events:none}
 #s0map{position:absolute;inset:0;z-index:1}
 .s0-map-fade{position:absolute;inset:0;z-index:5;pointer-events:none;background:
   linear-gradient(to right,var(--bg) 0%,rgba(255,255,255,0.22) 16%,transparent 38%),
@@ -385,7 +385,6 @@ textarea.inp{resize:none}
       </div>
       <div class="s0-foot">
         <div class="field" style="animation:up .5s .7s both">
-          <div class="fic icon icon-doc"></div>
           <input class="inp" id="oin" type="text" placeholder="Order number (optional)">
         </div>
         <button class="btn lg" onclick="toMap()" style="animation:up .5s .8s both"><span class="icon icon-pin" style="font-size:18px;width:20px;height:20px"></span> Set my delivery location</button>
