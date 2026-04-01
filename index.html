@@ -989,6 +989,7 @@ function go(id){
 // CUSTOMER SETUP
 // ═══════════════════════════════════════
 function toMap(){
+  if(!requirePrivacy()) return;
   ST.order=document.getElementById('oin').value.trim();
   ST.s1SheetCollapsed = localStorage.getItem(S1_COLLAPSED_KEY) === '1';
   loadSession();
@@ -1799,14 +1800,31 @@ function restart(){
 // ═══════════════════════════════════════
 // PRIVACY BANNER
 // ═══════════════════════════════════════
+const privacyAccepted=()=> localStorage.getItem('privacy_accepted')==='1';
+
+function requirePrivacy(){
+  const pb=document.getElementById('privacyBanner');
+  if(privacyAccepted()) return true;
+  if(pb) pb.classList.remove('hidden');
+  // block the action until the user accepts
+  return false;
+}
+
 function initPrivacyBanner(){
   const pb=document.getElementById('privacyBanner');
   if(!pb) return;
-  const accepted=localStorage.getItem('privacy_accepted')==='1';
-  if(accepted){ pb.classList.add('hidden'); return; }
-  pb.classList.remove('hidden');
+  if(privacyAccepted()){
+    pb.classList.add('hidden');
+  }else{
+    pb.classList.remove('hidden');
+  }
   const btn=pb.querySelector('[data-privacy-accept]');
-  if(btn){ btn.onclick=()=>{ localStorage.setItem('privacy_accepted','1'); pb.classList.add('hidden'); }; }
+  if(btn){
+    btn.onclick=()=>{
+      localStorage.setItem('privacy_accepted','1');
+      pb.classList.add('hidden');
+    };
+  }
 }
 document.addEventListener('DOMContentLoaded',initPrivacyBanner);
 </script>
