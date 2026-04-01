@@ -71,6 +71,15 @@ const FB = {
   databaseURL: window.FB_DATABASE_URL || 'https://pinpoint-4561d-default-rtdb.europe-west1.firebasedatabase.app'
 };
 
+// Firebase config fallbacks (so prod still works if config.js fails to load)
+const FIREBASE_API_KEY = window.FIREBASE_API_KEY || 'AIzaSyBb5tmWrrpqmJV9BpmpM5T7_vYzPcnLFyk';
+const FIREBASE_AUTH_DOMAIN = window.FIREBASE_AUTH_DOMAIN || 'pinpoint-4561d.firebaseapp.com';
+const FIREBASE_PROJECT_ID = window.FIREBASE_PROJECT_ID || 'pinpoint-4561d';
+// Re‑expose to window so later code can consume the guaranteed values
+window.FIREBASE_API_KEY = FIREBASE_API_KEY;
+window.FIREBASE_AUTH_DOMAIN = FIREBASE_AUTH_DOMAIN;
+window.FIREBASE_PROJECT_ID = FIREBASE_PROJECT_ID;
+
 // Cloudinary (set via config.js / env; unsigned preset recommended for client uploads)
 const CLOUDINARY_CLOUD_NAME = window.CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_UPLOAD_PRESET = window.CLOUDINARY_UPLOAD_PRESET || '';
