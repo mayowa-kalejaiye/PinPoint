@@ -130,6 +130,42 @@ textarea.inp{resize:none}
 .feat{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink2)}
 .fic-sm{width:30px;height:30px;border-radius:9px;background:var(--s2);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 
+/* S0 Desktop map panel */
+#s0{overflow:hidden}
+.s0-row{display:flex;flex-direction:column;min-height:100%;height:100%;}
+.s0-map-panel{display:none;position:relative;flex:1;min-height:0;overflow:hidden}
+#s0map{position:absolute;inset:0;z-index:1}
+.s0-map-fade{position:absolute;inset:0;z-index:5;pointer-events:none;background:
+  linear-gradient(to right,var(--bg) 0%,rgba(255,255,255,0.22) 16%,transparent 38%),
+  linear-gradient(to left,var(--bg) 0%,rgba(255,255,255,0.22) 16%,transparent 38%),
+  linear-gradient(to bottom,var(--bg) 0%,rgba(255,255,255,0.22) 8%,transparent 28%),
+  linear-gradient(to top,var(--bg) 0%,rgba(255,255,255,0.22) 8%,transparent 28%);
+}
+.s0-map-pin{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;pointer-events:none;display:flex;align-items:center;justify-content:center;}
+.s0-map-pin .dpin{width:40px;height:40px;background:#E8610A;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 6px 20px rgba(232,97,10,.6);animation:dpulse 2s ease-in-out infinite;}
+.s0-map-info{position:absolute;top:14px;right:14px;z-index:10020;background:rgba(255,255,255,.88);backdrop-filter:blur(6px);border-radius:12px;padding:10px 12px;box-shadow:0 8px 22px rgba(0,0,0,.12);pointer-events:none;min-width:180px;}
+.s0-map-info-row{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:#1a1a1f;margin-bottom:4px;}
+.s0-map-info-row:last-child{margin-bottom:0;}
+.s0-map-info-title{opacity:.74;text-transform:uppercase;font-size:10px;font-weight:700;letter-spacing:.08em;color:#4b4b56;}
+.s0-map-info-value{font-weight:700;color:#0f172a;}
+.s0-content{position:relative;z-index:10;display:flex;flex-direction:column;flex:1;min-height:0;}
+.s0-body{padding:3rem 1.75rem 0;flex:1;display:flex;flex-direction:column;justify-content:center;max-width:560px;}
+.s0-foot{padding:1.25rem 1.75rem 3rem;max-width:560px;}
+
+@media(min-width:920px){
+  .s0-row{flex-direction:row;}
+  .s0-map-panel{display:block;flex:1.2;order:2;}
+  .s0-content{flex:1;order:1;background:transparent;}
+  .s0-content .s0-body, .s0-content .s0-foot{background:rgba(255,255,255,0);border-radius:0;box-shadow:none;backdrop-filter:none;border:none;}
+  .s0-body{padding:3rem 2.25rem 0;}
+  .s0-map-fade{background:
+    linear-gradient(to right,var(--bg) 0%,rgba(255,255,255,0.18) 18%,transparent 44%),
+    linear-gradient(to left,var(--bg) 0%,rgba(255,255,255,0.18) 18%,transparent 44%),
+    linear-gradient(to bottom,var(--bg) 0%,rgba(255,255,255,0.18) 8%,transparent 30%),
+    linear-gradient(to top,var(--bg) 0%,rgba(255,255,255,0.18) 8%,transparent 30%);
+  }
+}
+
 /* MAP */
 #s1{overflow:hidden}
 #lmap{position:absolute;inset:0;z-index:1}
@@ -226,8 +262,10 @@ textarea.inp{resize:none}
 
 /* MAP MARKERS */
 .cpin{width:30px;height:30px;background:#E8610A;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid #fff;box-shadow:0 4px 14px rgba(232,97,10,.55)}
-.dpin{width:40px;height:40px;background:#E8610A;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 6px 20px rgba(232,97,10,.6);animation:dpulse 2s ease-in-out infinite}
+.dpin{position:relative;width:40px;height:40px;background:#E8610A;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 6px 20px rgba(232,97,10,.6);animation:dpulse 2s ease-in-out infinite}
+.dpin::after{content:'';position:absolute;inset:-12px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 0 0 0 rgba(232,97,10,.45);animation:dpulse-ring 2s ease-in-out infinite}
 @keyframes dpulse{0%,100%{box-shadow:0 6px 20px rgba(232,97,10,.55)}50%{box-shadow:0 6px 32px rgba(232,97,10,.95)}}
+@keyframes dpulse-ring{0%{transform:rotate(-45deg) scale(0.95);box-shadow:0 0 0 0 rgba(232,97,10,.45)}50%{transform:rotate(-45deg) scale(1.35);box-shadow:0 0 0 18px rgba(232,97,10,0)}100%{transform:rotate(-45deg) scale(1);box-shadow:0 0 0 0 rgba(232,97,10,.45)}}
 .mypos{width:18px;height:18px;border-radius:50%;background:#E8610A;border:3px solid #fff;box-shadow:0 0 0 5px rgba(232,97,10,.18),0 2px 8px rgba(232,97,10,.4);animation:mypulse 2.5s ease-in-out infinite}
 @keyframes mypulse{0%,100%{box-shadow:0 0 0 5px rgba(232,97,10,.18)}50%{box-shadow:0 0 0 12px rgba(232,97,10,.06)}}
 /* the animated car */
@@ -246,28 +284,42 @@ textarea.inp{resize:none}
 
 <!-- ─── S0: INTRO ─── -->
 <div id="s0" class="scr on">
-  <div class="s0-body">
-    <div class="wm">
-      <div class="wm-box"><div class="wm-pin"></div></div>
-      <span style="font-family:var(--serif);font-size:16px;font-weight:500">PinPoint</span>
+  <div class="s0-row">
+    <div class="s0-map-panel" id="s0-map-panel">
+      <div id="s0map"></div>
+      <div class="s0-map-fade"></div>
+      <div class="s0-map-pin"><div class="dpin"></div></div>
+      <div class="s0-map-info" id="s0-map-info">
+        <div class="s0-map-info-row"><span class="s0-map-info-title">Driver</span><span id="s0-driver-status">Waiting</span></div>
+        <div class="s0-map-info-row"><span class="s0-map-info-title">ETA</span><span id="s0-eta">—</span></div>
+        <div class="s0-map-info-row"><span class="s0-map-info-title">Distance</span><span id="s0-dist">—</span></div>
+      </div>
     </div>
-    <div style="margin-bottom:.85rem;animation:up .5s .2s both"><span class="pill or"><span class="blink or"></span>Live delivery tracking</span></div>
-    <h1 class="h1" style="animation:up .5s .35s both;margin-bottom:.9rem">Guide your driver <em style="font-style:italic;color:var(--or)">exactly</em> to your door.</h1>
-    <p style="font-size:14px;font-weight:300;color:var(--ink2);line-height:1.7;max-width:280px;animation:up .5s .5s both">Like Uber — drop a pin, your driver gets live routing and you watch them coming to you. No app.</p>
-    <div class="feats" style="animation:up .5s .6s both">
-      <div class="feat"><div class="fic-sm icon icon-pin"></div><span>Real GPS pin, not a typed address</span></div>
-      <div class="feat"><div class="fic-sm icon icon-road"></div><span>Actual road routing — not a straight line</span></div>
-      <div class="feat"><div class="fic-sm icon icon-car"></div><span>Animated car, both sides see it live</span></div>
-      <div class="feat"><div class="fic-sm icon icon-time"></div><span>ETA countdown updating as they drive</span></div>
+    <div class="s0-content">
+      <div class="s0-body">
+        <div class="wm">
+          <div class="wm-box"><div class="wm-pin"></div></div>
+          <span style="font-family:var(--serif);font-size:16px;font-weight:500">PinPoint</span>
+        </div>
+        <div style="margin-bottom:.85rem;animation:up .5s .2s both"><span class="pill or"><span class="blink or"></span>Live delivery tracking</span></div>
+        <h1 class="h1" style="animation:up .5s .35s both;margin-bottom:.9rem">Guide your driver <em style="font-style:italic;color:var(--or)">exactly</em> to your door.</h1>
+        <p style="font-size:14px;font-weight:300;color:var(--ink2);line-height:1.7;max-width:380px;animation:up .5s .5s both">Like Uber — drop a pin, your driver gets live routing and you watch them coming to you. No app.</p>
+        <div class="feats" style="animation:up .5s .6s both">
+          <div class="feat"><div class="fic-sm icon icon-pin"></div><span>Real GPS pin, not a typed address</span></div>
+          <div class="feat"><div class="fic-sm icon icon-road"></div><span>Actual road routing — not a straight line</span></div>
+          <div class="feat"><div class="fic-sm icon icon-car"></div><span>Animated car, both sides see it live</span></div>
+          <div class="feat"><div class="fic-sm icon icon-time"></div><span>ETA countdown updating as they drive</span></div>
+        </div>
+      </div>
+      <div class="s0-foot">
+        <div class="field" style="animation:up .5s .7s both">
+          <div class="fic icon icon-doc"></div>
+          <input class="inp" id="oin" type="text" placeholder="Order number (optional)">
+        </div>
+        <button class="btn lg" onclick="toMap()" style="animation:up .5s .8s both"><span class="icon icon-pin" style="font-size:18px;width:20px;height:20px"></span> Set my delivery location</button>
+        <p style="text-align:center;font-size:12px;color:var(--ink3);margin-top:.65rem;animation:up .5s .9s both">Free · No app · Works on any phone</p>
+      </div>
     </div>
-  </div>
-  <div class="s0-foot">
-    <div class="field" style="animation:up .5s .7s both">
-      <div class="fic icon icon-doc"></div>
-      <input class="inp" id="oin" type="text" placeholder="Order number (optional)">
-    </div>
-    <button class="btn lg" onclick="toMap()" style="animation:up .5s .8s both"><span class="icon icon-pin" style="font-size:18px;width:20px;height:20px"></span> Set my delivery location</button>
-    <p style="text-align:center;font-size:12px;color:var(--ink3);margin-top:.65rem;animation:up .5s .9s both">Free · No app · Works on any phone</p>
   </div>
 </div>
 
@@ -470,9 +522,9 @@ const CAR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 64" width="
 const ST={
   lat:null,lng:null,address:'',coords:'',
   landmark:'',photoB64:'',photoKey:'',phone:'',order:'',sid:'',
-  map:null,mmap:null,tmap:null,dmap:null,
-  carMk:null,myMk:null,destMk:null,
-  tRouteL:null,dRouteL:null,dRouteOuter:null,
+  map:null,mmap:null,tmap:null,dmap:null,s0map:null,
+  carMk:null,myMk:null,destMk:null,s0DriverMk:null,s0CustMk:null,
+  tRouteL:null,dRouteL:null,dRouteOuter:null,s0RouteL:null,s0RouteOuter:null,s0Circle:null,
   driverLat:null,driverLng:null,prevLat:null,prevLng:null,bearing:0,
   mode:null,syncLoop:null,wakeLock:null,
   gcT:null,rtT:null,drT:null,
@@ -584,6 +636,9 @@ const Sync={
 // ═══════════════════════════════════════
 window.addEventListener('DOMContentLoaded',()=>{
   Sync.init();
+  setHomeMapVisibility();
+  window.addEventListener('resize', setHomeMapVisibility);
+
   const p=new URLSearchParams(location.search), m=p.get('m');
   if(m==='drv'){
     ST.mode='drv'; ST.lat=+p.get('la'); ST.lng=+p.get('lo');
@@ -598,6 +653,41 @@ window.addEventListener('DOMContentLoaded',()=>{
     initTrk();
   }
 });
+
+function initS0Map(){
+  if(ST.s0map) return;
+  const el = document.getElementById('s0map');
+  if(!el) return;
+  ST.s0map = L.map('s0map',{center:[6.5244,3.3792],zoom:12,zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,keyboard:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(ST.s0map);
+  ST.s0Circle = L.circle([6.5244,3.3792],{radius:1500,color:'#E8610A',fillColor:'#E8610A',fillOpacity:0.07,weight:1.5,opacity:0.65}).addTo(ST.s0map);
+  updateHomeMapInfo('—','—','Waiting for customer');
+  ST.s0map.on('move',()=>{});
+}
+
+function updateS0CustomerMarker(){
+  if(!ST.s0map||ST.lat==null||ST.lng==null) return;
+  const pt=[ST.lat,ST.lng];
+  if(ST.s0CustMk){ ST.s0map.removeLayer(ST.s0CustMk); }
+  ST.s0CustMk=L.marker(pt,{icon:L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,30],html:'<div class="cpin"></div>'})}).addTo(ST.s0map);
+  if(ST.s0Circle){ ST.s0Circle.setLatLng(pt); }
+  else { ST.s0Circle=L.circle(pt,{radius:1500,color:'#E8610A',fillColor:'#E8610A',fillOpacity:0.07,weight:1.5,opacity:0.65}).addTo(ST.s0map); }
+  ST.s0map.setView(pt,15);
+  updateHomeMapInfo('—','—','Ready — Awaiting driver');
+}
+
+function setHomeMapVisibility(){
+  const panel=document.getElementById('s0-map-panel');
+  if(!panel) return;
+  if(window.innerWidth >= 920){
+    panel.style.display='block';
+    initS0Map();
+    if(ST.s0map){ ST.s0map.invalidateSize(); }
+  } else {
+    panel.style.display='none';
+  }
+}
+
 const E=s=>s?encodeURIComponent(s):'';
 const D=s=>s?decodeURIComponent(s):'';
 
@@ -704,6 +794,7 @@ function initMap(lat,lng){
   ST.lat=lat; ST.lng=lng; ST.coords=`${lat.toFixed(6)}, ${lng.toFixed(6)}`; ST.address=ST.coords;
   dsmL(); document.getElementById('gerr').style.display='none';
   setA(ST.coords,ST.coords); document.getElementById('pinbtn').disabled=false;
+  updateS0CustomerMarker();
   geo(lat,lng);
   if(ST.map){ ST.map.setView([lat,lng],17); return; }
   ST.map=L.map('lmap',{center:[lat,lng],zoom:17,zoomControl:false,attributionControl:false});
@@ -897,6 +988,7 @@ function R(d){return d*Math.PI/180}
 // ═══════════════════════════════════════
 function initTrk(){
   const lat=ST.lat,lng=ST.lng,sid=ST.sid;
+  updateHomeMapInfo('—','—','Waiting for driver');
   document.getElementById('tadr').textContent=ST.address||`${lat.toFixed(5)},${lng.toFixed(5)}`;
   document.getElementById('tord').textContent=ST.order||'Your order';
   if(ST.landmark){document.getElementById('tlm').textContent=ST.landmark;document.getElementById('tlmr').style.display='flex';}
@@ -919,18 +1011,32 @@ function initTrk(){
   );
 }
 let trtD;
-async function onDrvPos(dLat,dLng,dBrg){
-  // Create / move car marker
+async function onDrvPos(dLat,dLng,dBrr){
+  // Create / move car marker on tracking map
   if(!ST.carMk){
     ST.carMk=L.marker([dLat,dLng],{icon:L.divIcon({className:'',iconSize:[40,64],iconAnchor:[20,32],html:`<div class="carbox" id="carbox-t">${CAR}</div>`}),zIndexOffset:1000}).addTo(ST.tmap);
   } else { ST.carMk.setLatLng([dLat,dLng]); }
-  // Rotate car to bearing
+  // Rotate car to bearing on tracking map
   const cb=document.getElementById('carbox-t');
-  if(cb) cb.style.transform=`rotate(${dBrg}deg)`;
+  if(cb) cb.style.transform=`rotate(${dBrr}deg)`;
+  
+  // Create / move car marker on home map (s0map)
+  if(ST.s0map){
+    if(!ST.s0DriverMk){
+      ST.s0DriverMk=L.marker([dLat,dLng],{icon:L.divIcon({className:'',iconSize:[40,64],iconAnchor:[20,32],html:`<div class="carbox" id="carbox-s0" style="transform:rotate(${dBrr}deg)">${CAR}</div>`}),zIndexOffset:1000}).addTo(ST.s0map);
+    } else {
+      ST.s0DriverMk.setLatLng([dLat,dLng]);
+      const cb0=document.getElementById('carbox-s0');
+      if(cb0) cb0.style.transform=`rotate(${dBrr}deg)`;
+    }
+  }
+  
   // Distance
   const km=hav(dLat,dLng,ST.lat,ST.lng);
-  document.getElementById('tdist').textContent=fmtD(km*1000)+' away';
+  const distanceText=fmtD(km*1000)+' away';
+  document.getElementById('tdist').textContent=distanceText;
   document.getElementById('tstat').textContent='En route';
+  updateHomeMapInfo('—', distanceText, 'En route');
   // Route every 6s max
   clearTimeout(trtD);
   trtD=setTimeout(()=>getTrackRoute(dLat,dLng),6000);
@@ -944,9 +1050,23 @@ async function getTrackRoute(dLat,dLng){
   ST.tRouteL=drawL(ST.tmap,rt.pts,ST.tRouteL,'#E8610A',4.5);
   document.getElementById('tetan').textContent=fmtT(rt.dur);
   document.getElementById('tetas').textContent=fmtD(rt.dist)+' by road';
+  updateHomeMapInfo(fmtT(rt.dur)+' min', fmtD(rt.dist), 'Routing');
+  showHomeRouteOnMap(rt.pts);
   try{ST.tmap.fitBounds([[dLat,dLng],[ST.lat,ST.lng]],{padding:[80,80],maxZoom:16});}catch(e){}
 }
 function rcTrack(){ if(!ST.tmap)return; if(ST.carMk){try{ST.tmap.fitBounds([[ST.carMk.getLatLng().lat,ST.carMk.getLatLng().lng],[ST.lat,ST.lng]],{padding:[60,60],maxZoom:15});}catch(e){}} else if(ST.lat) ST.tmap.setView([ST.lat,ST.lng],15); }
+
+function updateHomeMapInfo(eta,dist,status){
+  const e=document.getElementById('s0-eta'); if(e) e.textContent=eta||'—';
+  const d=document.getElementById('s0-dist'); if(d) d.textContent=dist||'—';
+  const s=document.getElementById('s0-driver-status'); if(s) s.textContent=status||'Waiting';
+}
+
+function showHomeRouteOnMap(pts){
+  if(!ST.s0map||!pts?.length)return;
+  ST.s0RouteL=drawL(ST.s0map,pts,ST.s0RouteL,'#38BDF8',4);
+  ST.s0RouteOuter=drawL(ST.s0map,pts,ST.s0RouteOuter,'rgba(255,255,255,.35)',8);
+}
 
 // ═══════════════════════════════════════
 // DRIVER VIEW
@@ -1111,6 +1231,8 @@ async function getDrvRoute(dLat,dLng){
   ST.dRouteL=drawL(ST.dmap,rt.pts,ST.dRouteL,'#38BDF8',5);
   document.getElementById('detan').textContent=fmtT(rt.dur);
   document.getElementById('detas').textContent=fmtD(rt.dist)+' by road';
+  updateHomeMapInfo(fmtT(rt.dur)+' min', fmtD(rt.dist), 'Driver routing');
+  showHomeRouteOnMap(rt.pts);
   try{ST.dmap.fitBounds([[dLat,dLng],[ST.lat,ST.lng]],{padding:[80,100],maxZoom:16});}catch(e){}
 }
 function rcDrv(){ if(!ST.dmap)return; if(ST.driverLat){try{ST.dmap.fitBounds([[ST.driverLat,ST.driverLng],[ST.lat,ST.lng]],{padding:[60,80],maxZoom:15});}catch(e){}}else ST.dmap.setView([ST.lat,ST.lng],15); }
