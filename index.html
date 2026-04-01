@@ -637,7 +637,7 @@ const ST={
   lat:null,lng:null,address:'',coords:'',
   landmark:'',photoB64:'',photoThumb:'',photoUrl:'',photoKey:'',phone:'',order:'',sid:'',
   map:null,mmap:null,tmap:null,dmap:null,s0map:null,
-  carMk:null,myMk:null,destMk:null,s0DriverMk:null,s0CustMk:null,
+  carMk:null,myMk:null,destMk:null,s0DriverMk:null,s0CustMk:null,tCustMk:null,tCustCircle:null,
   tRouteL:null,dRouteL:null,dRouteOuter:null,s0RouteL:null,s0RouteOuter:null,s0Circle:null,
   driverLat:null,driverLng:null,prevLat:null,prevLng:null,bearing:0,
   mode:null,syncLoop:null,wakeLock:null,
@@ -1421,9 +1421,10 @@ function initTrk(){
   if(!ST.tmap){
     ST.tmap=L.map('tmap',{center:[lat,lng],zoom:15,zoomControl:false,attributionControl:false});
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(ST.tmap);
-    L.marker([lat,lng],{icon:L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,30],html:'<div class="cpin"></div>'})}).addTo(ST.tmap);
-    L.circle([lat,lng],{radius:18,color:'#E8610A',fillColor:'#E8610A',fillOpacity:.1,weight:1.5,opacity:.35}).addTo(ST.tmap);
+    updateTrackCustomerMarker();
   }
+  // Ensure customer marker exists even if map already existed
+  else { updateTrackCustomerMarker(); }
   if(!sid){go('s-track');return;}
   Sync.sub(sid,
     d=>onDrvPos(d.lat,d.lng,d.brg),
@@ -1435,6 +1436,18 @@ function initTrk(){
       if(ST.syncLoop)clearInterval(ST.syncLoop);
     }
   );
+}
+function updateTrackCustomerMarker(){
+  if(!ST.tmap||ST.lat==null||ST.lng==null) return;
+  const pt=[ST.lat,ST.lng];
+  if(ST.tCustMk){ ST.tCustMk.setLatLng(pt); }
+  else {
+    ST.tCustMk=L.marker(pt,{icon:L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,30],html:'<div class="cpin"></div>'})}).addTo(ST.tmap);
+  }
+  if(ST.tCustCircle){ ST.tCustCircle.setLatLng(pt); }
+  else {
+    ST.tCustCircle=L.circle(pt,{radius:18,color:'#E8610A',fillColor:'#E8610A',fillOpacity:.1,weight:1.5,opacity:.35}).addTo(ST.tmap);
+  }
 }
 let trtD;
 async function onDrvPos(dLat,dLng,dBrr){
