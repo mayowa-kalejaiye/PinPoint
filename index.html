@@ -1343,13 +1343,7 @@ async function toShare(){
   window._DRV=`${base}?m=drv&${q}`;
   window._TRK=`${base}?m=trk&${q}`;
 
-  // fill S4
-  document.getElementById('s4a').textContent=ST.address||ST.coords;
-  document.getElementById('s4c').textContent=ST.coords;
-  if(ST.order){document.getElementById('s4o').textContent=ST.order;document.getElementById('s4or').style.display='flex';}
-  if(ST.landmark){document.getElementById('s4l').textContent=ST.landmark;document.getElementById('s4lr').style.display='flex';}
-  const prevImg = ST.photoUrl || ST.photoB64;
-  if(prevImg){document.getElementById('s4ph').src=prevImg;document.getElementById('s4pr').style.display='flex';}
+  renderSharePanel();
 
   document.getElementById('ldsp').textContent='Shortening link...';
   window._DRVS = await shortenUrl(window._DRV);
@@ -1357,6 +1351,17 @@ async function toShare(){
   document.getElementById('ldsp').textContent = u.length>60 ? u.slice(0,57)+'…' : u;
 
   go('s4'); setTimeout(confetti,200);
+}
+function renderSharePanel(){
+  document.getElementById('s4a').textContent=ST.address||ST.coords||'';
+  document.getElementById('s4c').textContent=ST.coords||'';
+  document.getElementById('s4or').style.display=ST.order?'flex':'none';
+  document.getElementById('s4lr').style.display=ST.landmark?'flex':'none';
+  document.getElementById('s4pr').style.display=(ST.photoUrl||ST.photoB64)?'flex':'none';
+  if(ST.order) document.getElementById('s4o').textContent=ST.order;
+  if(ST.landmark) document.getElementById('s4l').textContent=ST.landmark;
+  const prevImg = ST.photoUrl || ST.photoB64;
+  if(prevImg) document.getElementById('s4ph').src=prevImg;
 }
 function getSendLink(){
   return window._DRVS||window._DRV||'';
@@ -1400,6 +1405,20 @@ function toTrack(){
 }
 function backToShare(){
   if(ST.syncLoop){ clearInterval(ST.syncLoop); ST.syncLoop=null; }
+  // Restore state from persisted tracking if we lost it
+  try{
+    if(!ST.sid){
+      const payload = sessionStorage.getItem('pp_track') || localStorage.getItem('pp_track');
+      if(payload){
+        const o = JSON.parse(payload);
+        ST.sid=o.sid; ST.lat=o.lat; ST.lng=o.lng; ST.address=o.address; ST.landmark=o.landmark; ST.order=o.order;
+        if(o.lat!=null && o.lng!=null) ST.coords=`${Number(o.lat).toFixed(6)}, ${Number(o.lng).toFixed(6)}`;
+      }
+    }
+  }catch(e){ console.warn('restore share state failed', e); }
+  renderSharePanel();
+  const u = getSendLink();
+  document.getElementById('ldsp').textContent = u ? (u.length>60 ? u.slice(0,57)+'…' : u) : 'Link ready when generated';
   go('s4');
 }
 
