@@ -903,13 +903,6 @@ const Sync={
 // ═══════════════════════════════════════
 window.addEventListener('DOMContentLoaded',()=>{
   initFirebaseAuth();
-  // Privacy banner wiring (no inline handlers to respect CSP)
-  const pb = document.getElementById('privacyBanner');
-  const pbBtn = document.getElementById('privacyAccept');
-  const hidePB = ()=>{ if(pb) pb.style.display='none'; localStorage.setItem('privacy_accepted','1'); };
-  if(localStorage.getItem('privacy_accepted')==='1') hidePB();
-  if(pbBtn) pbBtn.addEventListener('click', hidePB);
-  
   Sync.init();
   setHomeMapVisibility();
   window.addEventListener('resize', setHomeMapVisibility);
@@ -1790,11 +1783,5 @@ function restart(){
   go('s0');
 }
 </script>
-<!-- SECURITY: Privacy Policy Banner -->
-<div id="privacyBanner" style="position:fixed;bottom:0;left:0;right:0;background:#333;color:#fff;padding:12px;text-align:center;font-size:12px;z-index:900;">
-  We collect location data to provide delivery tracking. 
-  <a href="/privacy.html" style="color:#4fc3f7;text-decoration:underline;">Privacy Policy</a> | 
-  <button id="privacyAccept" style="background:#4fc3f7;border:0;padding:4px 8px;cursor:pointer;border-radius:3px;font-weight:600;">Accept</button>
-</div>
 </body>
 </html>
