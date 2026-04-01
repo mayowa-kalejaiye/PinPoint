@@ -952,11 +952,12 @@ window.addEventListener('DOMContentLoaded',()=>{
   } else {
     // Resume tracking after refresh if a session exists
     try{
-      const cache = sessionStorage.getItem('pp_track');
+      const cache = sessionStorage.getItem('pp_track') || localStorage.getItem('pp_track');
       if(cache){
         const t = JSON.parse(cache);
         ST.mode='trk';
         ST.lat=t.lat; ST.lng=t.lng; ST.address=t.address; ST.landmark=t.landmark; ST.order=t.order; ST.sid=t.sid;
+        go('s-track');
         setTimeout(initTrk, 100);
       }
     }catch(e){ console.warn('Track resume failed', e); }
@@ -1371,14 +1372,16 @@ function nShare(){ if(navigator.share)navigator.share({title:'PinPoint',url:getS
 function toTrack(){
   // Persist tracking session so a refresh can resume live view
   try{
-    sessionStorage.setItem('pp_track', JSON.stringify({
+    const payload = JSON.stringify({
       sid: ST.sid,
       lat: ST.lat,
       lng: ST.lng,
       address: ST.address,
       landmark: ST.landmark,
       order: ST.order
-    }));
+    });
+    sessionStorage.setItem('pp_track', payload);
+    localStorage.setItem('pp_track', payload);
   }catch(e){ console.warn('Failed to persist track session', e); }
   go('s-track'); setTimeout(initTrk,300);
 }
