@@ -1416,6 +1416,20 @@ function backToShare(){
       }
     }
   }catch(e){ console.warn('restore share state failed', e); }
+
+  // Rebuild share links if lost (e.g., after refresh/back without _DRV/_TRK)
+  if(!window._DRV || !window._TRK){
+    const base = location.origin + location.pathname;
+    const purl = ST.photoUrl ? `&purl=${E(ST.photoUrl)}` : '';
+    const pth = ST.photoThumb ? `&pth=${E(ST.photoThumb)}` : '';
+    const q = `la=${ST.lat?.toFixed ? ST.lat.toFixed(6) : ST.lat}&lo=${ST.lng?.toFixed ? ST.lng.toFixed(6) : ST.lng}`+
+              `&ad=${E(ST.address||'')}&lm=${E(ST.landmark||'')}&ph=${E(ST.phone||'')}&on=${E(ST.order||'')}`+
+              `&pk=${E(ST.photoKey||'')}&sid=${ST.sid||''}${purl}${pth}`;
+    window._DRV = `${base}?m=drv&${q}`;
+    window._TRK = `${base}?m=trk&${q}`;
+    window._DRVS = null; // forget old short link if any
+  }
+
   renderSharePanel();
   const u = getSendLink();
   document.getElementById('ldsp').textContent = u ? (u.length>60 ? u.slice(0,57)+'…' : u) : 'Link ready when generated';
