@@ -1534,6 +1534,24 @@ async function onDrvPos(dLat,dLng,dBrr){
   if(!ST.tRouteL) await getTrackRoute(dLat,dLng);
 }
 async function getTrackRoute(dLat,dLng){
+  if(!ST.lat || !ST.lng) return;
+  
+  // Reroute Check: If driver is more than 300m away from the current route, force a fresh route immediately.
+  // We use HAV distance to the nearest point on the existing route (if it exists) as a simple proxy.
+  let isOffRoute = false;
+  if(ST.tRouteL && ST.tRouteL.getLatLngs().length > 0) {
+    const pts = ST.tRouteL.getLatLngs();
+    let minDist = Infinity;
+    const dPos = L.latLng(dLat, dLng);
+    // Rough check: distance to nearest point in polyline
+    for(let i=0; i<pts.length; i++) {
+        const d = dPos.distanceTo(pts[i]);
+        if(d < minDist) minDist = d;
+        if(d < 150) break; // Close enough
+    }
+    if(minDist > 300) isOffRoute = true;
+  }
+
   document.getElementById('trload').classList.add('on');
   const rt=await route(dLat,dLng,ST.lat,ST.lng);
   document.getElementById('trload').classList.remove('on');
@@ -1828,6 +1846,22 @@ function initDriverLocationPrompt(){
 }
 
 async function getDrvRoute(dLat,dLng){
+  if(!ST.lat || !ST.lng) return;
+  
+  // Reroute logic: If driver is 300m off course, force route refresh.
+  let isOffRoute = false;
+  if(ST.dRouteL) {
+    const pts = ST.dRouteL.getLatLngs();
+    let minDist = Infinity;
+    const dPos = L.latLng(dLat, dLng);
+    for(let i=0; i<pts.length; i++) {
+        const d = dPos.distanceTo(pts[i]);
+        if(d < minDist) minDist = d;
+        if(d < 150) break;
+    }
+    if(minDist > 300) isOffRoute = true;
+  }
+
   document.getElementById('drload').classList.add('on');
   const rt=await route(dLat,dLng,ST.lat,ST.lng);
   document.getElementById('drload').classList.remove('on');
