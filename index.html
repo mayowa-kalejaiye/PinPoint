@@ -955,15 +955,21 @@ window.addEventListener('DOMContentLoaded',()=>{
     go('s-track');
     setTimeout(initTrk, 100); // Ensure DOM is ready
   } else {
-    // Resume tracking after refresh if a session exists
+    // Resume tracking after refresh if a valid session exists (< 2 hours)
     try{
       const cache = sessionStorage.getItem('pp_track') || localStorage.getItem('pp_track');
       if(cache){
         const t = JSON.parse(cache);
-        ST.mode='trk';
-        ST.lat=t.lat; ST.lng=t.lng; ST.address=t.address; ST.landmark=t.landmark; ST.order=t.order; ST.sid=t.sid;
-        go('s-track');
-        setTimeout(initTrk, 100);
+        const age = Date.now() - (t.ts || 0);
+        if(age < 2 * 60 * 60 * 1000){
+          ST.mode='trk';
+          ST.lat=t.lat; ST.lng=t.lng; ST.address=t.address; ST.landmark=t.landmark; ST.order=t.order; ST.sid=t.sid;
+          go('s-track');
+          setTimeout(initTrk, 100);
+        } else {
+          sessionStorage.removeItem('pp_track');
+          localStorage.removeItem('pp_track');
+        }
       }
     }catch(e){ console.warn('Track resume failed', e); }
   }
@@ -1389,7 +1395,8 @@ function toTrack(){
       lng: ST.lng,
       address: ST.address,
       landmark: ST.landmark,
-      order: ST.order
+      order: ST.order,
+      ts: Date.now()
     });
     sessionStorage.setItem('pp_track', payload);
     localStorage.setItem('pp_track', payload);
@@ -1486,6 +1493,10 @@ function initTrk(){
       document.getElementById('tetas').textContent='Your driver has arrived!';
       document.getElementById('tdist').textContent='Driver is here!';
       if(ST.syncLoop)clearInterval(ST.syncLoop);
+      // Immediately expire session when arrived
+      sessionStorage.removeItem('pp_track');
+      localStorage.removeItem('pp_track');
+      clearSession();
     }
   );
 }
@@ -1883,6 +1894,10 @@ function arrived(){
   if(wid)navigator.geolocation.clearWatch(wid);
   if(ST.syncLoop)clearInterval(ST.syncLoop);
   try{ST.wakeLock?.release();}catch(e){}
+  // Immediately expire session for driver
+  sessionStorage.removeItem('pp_track');
+  localStorage.removeItem('pp_track');
+  clearSession();
   notifyDriverArrival();
   vib([60,40,120]); go('s-arrived');
 }
