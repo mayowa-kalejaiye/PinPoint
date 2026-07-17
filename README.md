@@ -1,8 +1,7 @@
+<img width="1365" height="767" alt="image" src="https://github.com/user-attachments/assets/c175b61c-aed5-4a2a-8e13-f23a6741fa46" />
+
+
 <img width="567" height="272" alt="image" src="https://github.com/user-attachments/assets/0d196e89-da6e-4c36-931b-8c83ab332b0c" />
-
-<img width="555" height="222" alt="image" src="https://github.com/user-attachments/assets/310b42a5-a081-498f-a8db-575fe13ce18a" />
-
-<img width="559" height="275" alt="image" src="https://github.com/user-attachments/assets/4c0a4bbb-db4c-4a7b-a85b-fe52ffe76f67" />
 
 _comments from LinkedIn, shared with thanks_
 
