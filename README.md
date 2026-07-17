@@ -1,3 +1,12 @@
+<img width="567" height="272" alt="image" src="https://github.com/user-attachments/assets/0d196e89-da6e-4c36-931b-8c83ab332b0c" />
+
+<img width="555" height="222" alt="image" src="https://github.com/user-attachments/assets/310b42a5-a081-498f-a8db-575fe13ce18a" />
+
+<img width="559" height="275" alt="image" src="https://github.com/user-attachments/assets/4c0a4bbb-db4c-4a7b-a85b-fe52ffe76f67" />
+
+Linkedin Post: https://www.linkedin.com/posts/mayowa-kalejaiye_so-i-built-a-painkiller-for-nigerian-addresses-ugcPost-7445115089243762688-mAix/?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAAE0lc38B0a5-G-fzx5ImUtRXYJGbp_5LJss
+
+
 # PinPoint
 
 PinPoint is a lightweight, single-file (HTML/JS/CSS) pick-up location app designed for quick driver/customer coordination.
